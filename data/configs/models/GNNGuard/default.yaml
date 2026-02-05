@@ -1,0 +1,12 @@
+model_config:
+  aggr: mean
+  drop_out: 0.5
+  hidden_unit: 32
+  lr: 0.01
+  model: GNNGuard
+  num_layers: 2
+  optimizer: ADAM
+  weight_decay: 0.0005
+  num_epochs: 200
+  patience: 500
+  weight_decay: 0.0005

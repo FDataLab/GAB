@@ -1,0 +1,21 @@
+model: 'RobustGCN'
+aggr: 
+  - "sum"
+num_layers:
+  - 2
+hidden_unit:
+  - 16
+
+lr:
+  - 0.001
+  - 0.01
+  - 0.005
+drop_out: 
+  - 0.5
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
+

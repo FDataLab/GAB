@@ -1,0 +1,48 @@
+model: 'GRAND'
+aggr: 
+  - "sum"
+num_layers:
+  - 2
+hidden_unit:
+  - 16
+  - 32
+  - 64
+lr:
+  - 0.001
+  - 0.01
+  - 0.005
+drop_out: 
+  - 0.5
+  - 0.6
+weight_decay:
+  - 0.0005
+  - 0.0001
+  - 0.001
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
+drop_node_rate:
+  - 0.5
+order:
+  - 2
+  - 4 
+  - 8
+temp:
+  - 0.1
+  - 0.5
+  - 0.3
+lambda:
+  - 1.0
+  - 0.5
+  - 0.7
+
+sample:
+  - 2
+  - 3
+  - 4
+
+
+

@@ -1,0 +1,29 @@
+model: 'GIN'
+aggr: 
+  - "add"
+num_layers:
+  - 3
+hidden_unit:
+  - 64
+lr:
+  - 0.001
+  - 0.01
+batch_size:
+  - 16
+drop_out: 
+  - 0.2
+weight_decay:
+  - 0.0001
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
+scheduler_state: 
+  scheduler: "StepLR"
+  step_size: 
+    - 50
+  gamma:
+    - 0.5
+

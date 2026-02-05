@@ -1,0 +1,11 @@
+model_config:
+  model: 'GCN'
+  lr: 0.01
+  optimizer: "ADAM"
+  num_layers: 2
+  hidden_unit: 16
+  aggr: "add"
+  num_epochs: 200
+  patience: 500
+  drop_out: 0.5
+  weight_decay: 0.0005

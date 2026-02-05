@@ -1,0 +1,26 @@
+model: 'GNNGuard'
+aggr: 
+  - "mean"
+num_layers:
+  - 2
+  - 3
+hidden_unit:
+  - 32
+  - 64
+  - 128
+lr:
+  - 0.01
+  - 0.005
+drop_out: 
+  - 0.5
+  - 0.6
+weight_decay:
+  - 0.0005
+  - 0.001
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
+

@@ -1,0 +1,25 @@
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore all .DS_Store files (common on macOS)
+.DS_Store
+
+# Ignore all files in the build/ directory
+build/
+
+
+# Ignore all .log files
+*.log
+
+#Data folder
+data/dataset/
+data/figs/
+utility/data
+
+
+#Output log
+output/log/
+
+/gottack_exps
+data/results/gottack_exps

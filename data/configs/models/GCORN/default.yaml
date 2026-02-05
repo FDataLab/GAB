@@ -1,0 +1,11 @@
+model_config:
+  model: 'GCORN'
+  hidden_unit: 16
+  lr: 0.01
+  num_epochs: 300
+  optimizer: "ADAM"
+  patience: 50
+  nlayers : 2
+  drop_out: 0.5
+
+

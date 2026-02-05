@@ -1,0 +1,11 @@
+model_config:
+  model: 'GCN_surrogate'
+  aggr: "sum"
+  num_layers: 2
+  hidden_unit: 16
+  lr: 0.01
+  drop_out: 0.5
+  weight_decay: 0.0005
+  num_epochs: 200
+  optimizer: "ADAM"
+  patience: 500

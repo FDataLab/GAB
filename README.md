@@ -118,18 +118,7 @@ GOttack requires precompute orbit discovery on the dataset, PyORCA is available 
 
 
 ## Reference
-If you find our work helpful, please cite us:
-```
-@inproceedings{
-    anonymous2025adversarial,
-    title={Adversarial Graph Neural Network Benchmarks: Towards Practical and Fair Evaluation},
-    author={Anonymous},
-    booktitle={Submitted to The Fourteenth International Conference on Learning Representations},
-    year={2025},
-    url={https://openreview.net/forum?id=ZTFbk7e3SN},
-    note={under review}
-}
-```
+
 
 **Our adversarial benchmark is built upon [GreatX](https://github.com/EdisonLeeeee/GreatX) and [DeepRobust](https://github.com/DSE-MSU/DeepRobust). We appreciate their contribution to graph adversarial learning.**
 

@@ -1,0 +1,23 @@
+model: 'GSAGE'
+aggr: 
+  - "add"
+num_layers:
+  - 2
+hidden_unit:
+  - 64
+lr:
+  - 0.001
+  - 0.01
+batch_size:
+  - 16
+drop_out: 
+  - 0.2
+weight_decay:
+  - 0.0001
+num_epochs: 
+  - 1000
+optimizer_state:
+  optimizer: "ADAM"
+patience: 
+  - 50
+
