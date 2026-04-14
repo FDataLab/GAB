@@ -1,9 +1,7 @@
 import sys
 import os
-import copy
 import timeit
 import statistics as stats
-import io
 import timeit
 import json
 from torch_geometric.utils import degree
@@ -12,11 +10,11 @@ import torch
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from evaluation.ModelSupervisor import ModelSupervisor
-from utility.util import set_random
 from torch_geometric.data import Data
 from greatx.attack.attacker import Attacker
 from typing import List, Tuple
 from static import *
+
 class AdversarialSupervisor:
     def __init__(self,data:Data,
                  adversarial:Attacker,
