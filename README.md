@@ -1,5 +1,8 @@
-# U-AdversarialGNN
-Unifying Adversarial Attacks on Graph Neural Networks
+<div align="center">
+<h3 style="font-size: 22px">Adversarial Graph Neural Network Benchmarks<br> Towards Practical and Fair Evaluation</h3>
+<img src="./doc/AGB_logo_adversarial_graph.svg" width="80%"/>
+</div>
+
 
 **To setup the environment, please check out [setup.md](doc/Set%20up.md)**
 
