@@ -24,6 +24,8 @@ from defense_model.improving_architecture.aggregation.RUNG import RUNG
 
 from utility.util import logger
 from static import *
+from .initializer import apply_weight_init
+
 
 
 def load_model(in_channel,out_channel,degree_dist,**kwargs):
@@ -139,6 +141,8 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     else:
         raise Exception('Unsupport or undefined model{}'.format(model_name))
     logger.info('Using models {} '.format(model_name))
+    weight_init = kwargs.get("initializer")  # e.g. "kaiming_normal"
+    apply_weight_init(model, weight_init)
     return model
 
 def load_graph_purification(device = None,**kwargs):
