@@ -1,13 +1,6 @@
-import torch.nn.functional as F
-from torch_geometric.datasets import Planetoid
-import torch_geometric.transforms as T
-from torch_geometric.utils import degree
-import torch
-import numpy as np
 import networkx as nx
-from orbit_table_generator import OrbitTableGenerator, generate_orbit_tables_from_count
+from orbit_table_generator import generate_orbit_tables_from_count
 import orca
-from torch_geometric.utils import to_networkx
 
 if __name__ == '__main__':
     import sys
@@ -17,10 +10,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
     from utility.config import args
-    from utility.util import set_random, logger, init_logger,mkdirs,prepare_dir
-    from evaluation import ModelSupervisor
     from data_loader import DataLoader
-    from utility import ConfigHandler
     from static import *
 
     args.dataset = "squirrel"
@@ -41,13 +31,6 @@ if __name__ == '__main__':
             uni_edge.add((src,dst))
             uni_edge.add((dst,src))
     nx.write_edgelist(G, "graph.txt", data=False)
-
-       
-
-    print("Generating graph")
-    # G = to_networkx(data, to_undirected=True)
-    # G = to_networkx(data)
-    print("Done generating graph")
 
 
     orbit_counts = orca.orbit_counts("node", 5, G)

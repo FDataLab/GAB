@@ -18,22 +18,14 @@ Technical University of Munich
 """
 import warnings
 import torch
-from torch.nn.parameter import Parameter
 from deeprobust.graph import utils
 from deeprobust.graph.targeted_attack import Nettack
-import torch.nn.functional as F
-from torch import optim
-from torch.nn import functional as F
-from torch.nn.modules.module import Module
-from torch.nn.parameter import Parameter
 import numpy as np
 import scipy.sparse as sp
-from copy import deepcopy
 from numba import jit
-from torch import spmm
 from greatx.nn.models.surrogate import Surrogate
 from torch_geometric.data import Data
-from torch_geometric.utils import degree, to_scipy_sparse_matrix,to_edge_index,to_dense_adj
+from torch_geometric.utils import to_dense_adj
 from copy import copy
 import os
 import sys

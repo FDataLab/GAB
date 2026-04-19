@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from copy import deepcopy
 import timeit
 from torch_geometric.data import Data
+from typing import Union, Dict, Optional, List
 
     
 # Edit path to import from different module
@@ -21,7 +22,40 @@ from static import *
 
 
 class ModelSupervisor:
-    def __init__(self,data:Data,device = "cpu",seed = 720,train_early_stopping = True,use_purification = False,purification_config = None,**model_args) -> None:
+    """
+    Manages the full lifecycle of a GNN model including initialization, training,
+    and inference, with optional graph purification preprocessing.
+
+    Args:
+        - data: PyTorch Geometric Data object containing graph structure and node features
+        - device: Device to run the model on, e.g. 'cpu' or 'cuda' (default: 'cpu')
+        - seed: Random seed for reproducibility (default: 720)
+        - train_early_stopping: If True, applies early stopping during training (default: True)
+        - use_purification: If True, applies graph purification to the data before
+          training (default: False)
+        - purification_config: Dictionary of purification hyperparameters. Required if
+          use_purification is True (default: None)
+        - **model_args: Additional keyword arguments for model and optimizer configuration,
+          including EPOCHS, PATIENCE, LEARNING_RATE, WEIGHT_DECAY, BATCH_SIZE, MODEL,
+          OPTIMIZER, OPTIMIZER_STATE, SCHEDULER, and SCHEDULER_STATE
+
+    Notes:
+        - Degree distribution is computed from the graph and passed to the model loader
+          for degree-aware models such as PNA
+        - If purification is applied and the resulting edge_index is None, it is
+          reconstructed from the sparse adjacency matrix adj_t
+        - Optimizer and scheduler are initialized based on model_args configuration
+    """
+    def __init__(
+        self,
+        data:Data,
+        device : str = "cpu",
+        seed : int = 720,
+        train_early_stopping : bool = True,
+        use_purification : bool = False,
+        purification_config : Optional[Dict[str,Union[int, str, float]]] = None,
+        **model_args
+    ) -> None:
         set_random(seed)
         deg = degree(data.edge_index[1], num_nodes=data.num_nodes, dtype=torch.long)
         degree_dist = torch.bincount(deg)
@@ -79,7 +113,13 @@ class ModelSupervisor:
         self.prediction = None
 
 
-    def to_device(self,device = "cpu"):
+    def to_device(self,device : str = "cpu") -> None:
+        """
+        Moves the model and all associated graph tensors to the specified device.
+
+        Args:
+            - device: Target device to move tensors to, e.g. 'cpu' or 'cuda' (default: 'cpu')
+        """
         self.model = self.model.to(device)
         self.edge_index_torch = self.edge_index_torch.to(device)
         self.features_torch = self.features_torch.to(device)
@@ -89,7 +129,10 @@ class ModelSupervisor:
 
     
         
-    def _train(self,idx_train):
+    def _train(self,idx_train : List[int]) -> float:
+        """
+        1 epoch of training.
+        """
         self.model.train()
         self.optimizer.zero_grad()
         if self.model_name != "GRAND":
@@ -107,9 +150,22 @@ class ModelSupervisor:
         return float(loss)
     
 
+    def train_model(
+        self,
+        idx_train : List,
+        idx_val : List,
+        idx_test : List,
+        log_interval : int = 10
+    ):
+        """
+        Trains the GNN model using the provided train/validation/test index splits.
 
-
-    def train_model(self,idx_train,idx_val,idx_test,log_interval = 10):
+        Args:
+            - idx_train: Indices of training nodes
+            - idx_val: Indices of validation nodes
+            - idx_test: Indices of test nodes
+            - log_interval: Number of epochs between progress log outputs (default: 10)
+        """
         logger.info(">>Start traing {} on {} for node classification".format(args.model,args.dataset))
         logger.info("Number of nodes:{}".format(self.number_nodes))
         logger.info("Training node:{} , Validation node: {} , Test node: {}".format(len(idx_train),len(idx_val),len(idx_test)))
@@ -173,7 +229,18 @@ class ModelSupervisor:
         logger.info("Best val:{:.3f}, Best test: {:.3f}".format(best_val_acc,best_test_acc))
 
     
-    def get_model_output(self,data:Data,force_no_use_purification = False):
+    def get_model_output(self,data:Data,force_no_use_purification : bool = False) -> torch.Tensor:
+        """
+        Computes and returns the raw output logits of the model for the given graph data.
+
+        Args:
+            - data: PyTorch Geometric Data object containing graph structure and node features
+            - force_no_use_purification: If True, skips purification even if use_purification
+            is enabled (default: False)
+
+        Returns:
+            - Raw output logits as a torch.Tensor
+        """
         self.model.eval()
         if self.use_purification and not force_no_use_purification:
             assert self.purification is not None, "In order to use purification, please define purification config when initialize the supervisor"
@@ -190,17 +257,51 @@ class ModelSupervisor:
             output = self.model( features_torch, edge_index_torch,edge_attr)
         return output
 
-    def get_model_prediction(self,data:Data):
+    def get_model_prediction(self,data:Data) -> torch.Tensor:
+        """
+        Returns the predicted class labels for each node in the given graph data.
+
+        Args:
+            - data: PyTorch Geometric Data object containing graph structure and node features
+
+        Returns:
+            - Predicted class indices as a torch.Tensor of shape (num_nodes,)
+        """
         return self.get_model_output(data).argmax(dim=-1)
 
-    def get_prediction_accuracy(self,mask,data:Data,prediction = None):
+    def get_prediction_accuracy(self,mask,data:Data,prediction : bool = None) -> float:
+        """
+        Computes the prediction accuracy over a specified subset of nodes.
+
+        Args:
+            - mask: Indices or boolean mask identifying the subset of nodes to evaluate
+            - data: PyTorch Geometric Data object containing graph structure and node features
+            - prediction: Precomputed prediction tensor. If None, predictions are computed
+            from the model (default: None)
+
+        Returns:
+            - Accuracy as a float representing the fraction of correctly predicted nodes
+            within the specified mask
+        """
         if prediction is None:
             prediction = self.get_model_prediction(data)
         return int((prediction[mask] == self.labels_torch[mask]).sum()) / len(mask)
     
-    def load_model_state(self,model_cached_address):
+    def load_model_state(self,model_cached_address : str) -> None:
+        """
+        Loads model weights from a cached state dictionary into the current model.
+
+        Args:
+            - model_cached_address: State dictionary containing the saved model weights
+        """
         self.model.load_state_dict(model_cached_address)
 
-    def save_model_state(self,model_cached_address: str):
+    def save_model_state(self,model_cached_address: str) -> None:
+        """
+        Saves the current model weights to disk at the specified file path.
+
+        Args:
+            - model_cached_address: File path where the model state dictionary will be saved
+        """
         torch.save(self.model.state_dict(),model_cached_address)
         

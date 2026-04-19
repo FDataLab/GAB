@@ -1,12 +1,8 @@
 
 """
-Author: Anonymous Authors
-Credits:
-            - The OrbitAttack is implemented with reference to Nettack's source code,
-            a method proposed in the paper: 'Adversarial Attacks on Neural Networks for Graph Data'
-            by Daniel Zügner, Amir Akbarnejad and Stephan Günnemann
-            - Gottack is built on top of DeepRobust - A PyTorch Library for Adversarial
-            Attacks and Defenses developed by Yaxin Li, Wei Jin, Han Xu and Jiliang Tang
+Author: Bao Ngo
+Source: https://github.com/cakcora/GOttack
+Reference: https://openreview.net/forum?id=YbURbViE7l.
 """
 import warnings
 import torch

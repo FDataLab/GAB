@@ -5,8 +5,8 @@ import warnings
 from torch_geometric.nn import aggr as torch_aggr
 from greatx.nn.models import SGC,RobustGCN,GNNGUARD,ElasticGNN
 from greatx.defense.purification import SVDPurification
-import torch_geometric.transforms as T
-
+import torch
+from typing import Optional
 
 # Hide all warnings
 warnings.filterwarnings("ignore")
@@ -26,7 +26,36 @@ from utility.util import logger
 from static import *
 
 
-def load_model(in_channel,out_channel,degree_dist,**kwargs):
+def load_model(in_channel : int, out_channel : int,degree_dist : torch.Tensor,**kwargs):
+    """
+    Instantiates and returns a GNN model based on the specified model name and configuration.
+
+    Args:
+        - in_channel: Number of input feature channels
+        - out_channel: Number of output channels (classes)
+        - degree_dist: Degree distribution of the graph, required for PNA model
+        - **kwargs: Additional keyword arguments for model configuration, including:
+            - MODEL: Name of the model to load (required)
+            - HIDDEN_UNITS: Number of hidden units per layer (default: 16)
+            - NUM_LAYERS: Number of layers (default: 2)
+            - DROPOUT: Dropout rate (default: 0)
+            - AGGREGATION: Aggregation method; supports 'sum', 'median', 'softmedian' (default: 'sum')
+            - GAMMA_ATTENTION: Gamma parameter for RobustGCN (default: 1)
+            - PROPA_STEP_K, LAMBDA1, LAMBDA2: Parameters for ElasticGNN
+            - DROP_NODE_RATE, TEMP, LAMBDA, SAMPLE: Parameters for GRAND
+            - gamma, lambda_hat: Parameters for RUNG
+
+    Returns:
+        - Instantiated GNN model corresponding to the specified model name
+
+    Raises:
+        - AssertionError: If model_name, in_channel, or out_channel are not provided
+        - Exception: If the specified model name is unsupported or undefined
+
+    Supported models:
+        - GCN, GIN, GSAGE, PNA, GAT, EdgeCNN, SGC, GCN_surrogate,
+        RobustGCN, GNNGuard, ElasticGNN, GRAND, GCORN, RUNG, NoisyGNN
+    """
 
     model_name = kwargs.get(MODEL)
     nhid = kwargs.get(HIDDEN_UNITS,16)
@@ -141,7 +170,32 @@ def load_model(in_channel,out_channel,degree_dist,**kwargs):
     logger.info('Using models {} '.format(model_name))
     return model
 
-def load_graph_purification(device = None,**kwargs):
+def load_graph_purification(device : Optional[str] = None,**kwargs):
+    """
+    Instantiates and returns a graph purification method based on the specified purification name and configuration.
+
+    Args:
+        - device: Device to run the purification on (e.g., 'cpu', 'cuda'). Optional
+        - **kwargs: Additional keyword arguments for purification configuration, including:
+            - PURIFICATION: Name of the purification method to load (required)
+            - THRESHOLD: Similarity threshold for Jaccard and SVD purification
+            - TOP_K: Top-K edges to retain for SVD and GARNET purification
+            - TOP_SINGULAR_R: Number of top singular values for GARNET purification
+            - GAMMA: Gamma parameter for GARNET purification
+            - use_feature: Whether to use node features in GARNET purification
+            - weighted_knn: Whether to use weighted KNN graph in GARNET purification
+            - adj_norm: Whether to normalize the adjacency matrix in GARNET purification
+
+    Returns:
+        - Instantiated graph purification object corresponding to the specified purification name
+
+    Raises:
+        - AssertionError: If purification_name is not provided
+        - Exception: If the specified purification name is unsupported or undefined
+
+    Supported purification methods:
+        - Jaccard, SVD, GARNET
+    """
     purification_name = kwargs.get(PURIFICATION)
     assert purification_name is not None
 

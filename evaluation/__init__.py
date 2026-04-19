@@ -1,8 +1,6 @@
-from .Grid import Grid
+from .Grid import Grid, ModelGrid, PurificationGrid
 from .ModelSupervisor import ModelSupervisor
-from .ModelGrid import ModelGrid
 from .ModelSelector import ModelSelector
-from .PurificationGrid import PurificationGrid
 from .PurificationSelector import PurificationSelector
 from .IModelSupervisor import IModelSupervisor
 from .AdversarialAssessment import AdversarialAssessment
