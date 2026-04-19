@@ -7,6 +7,7 @@ import torch_geometric.transforms as T
 from torch_geometric.datasets.heterophilous_graph_dataset import HeterophilousGraphDataset
 from torch_geometric.datasets import WikipediaNetwork
 import warnings
+from torch_geometric.data import Data
 
 warnings.filterwarnings("ignore")
 
@@ -54,8 +55,21 @@ PyG_WIKI_NETWORK_DATASET = {
 
 
 class DataLoader:
+    """
+    Loads graph datasets and returns them in PyTorch Geometric (PyG) format.
+
+    Supports datasets from three collections:
+        - Homophily dataset: citeseer, citeseer_full, cora, cora_ml, cora_full, amazon_cs,
+          amazon_photo, coauthor_cs, coauthor_phy, polblogs, karate_club, pubmed, flickr,
+          blogcatalog, dblp, acm, uai, pdn
+        - Heterophily dataset: Roman-empire, Amazon-ratings, Minesweeper, Tolokers, Questions
+        - Wiki network: chameleon, crocodile, squirrel
+    """
     @abstractmethod
-    def load(dataset:str) :
+    def load(dataset:str) -> Data:
+        """
+        Load dataset.
+        """
         name = dataset
         if dataset in DATASETS_greatX:
             if not os.path.exists(PATH_DATASET):

@@ -5,6 +5,24 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from static import *
 
 class ConfigHandler:
+    """
+    Provides static methods for loading and saving model, purification, split,
+    and hyperparameter grid configurations from/to YAML files.
+
+    Methods:
+        - load_model_config: Loads a model configuration YAML file for a given model type,
+          config name, dataset, and split index
+        - save_model_config: Saves a model configuration dictionary as a YAML file
+          organized by model type, dataset, and split index
+        - load_purification_config: Loads a purification configuration YAML file for a
+          given purification type, model type, dataset, and split index
+        - save_purification_config: Saves a purification configuration dictionary as a
+          YAML file organized by purification type, model type, dataset, and split index
+        - load_split_config: Loads a data split configuration YAML file by config name
+        - load_hyper_grid: Loads a hyperparameter grid YAML file for a given model type
+        - load_hyper_puri_grid: Loads a hyperparameter grid YAML file for a given
+          purification type
+    """
     @staticmethod
     def load_model_config(model_type="GCN",config_name = "default",dataset = None,split = None):
         if dataset is None or config_name == "default":
@@ -65,8 +83,3 @@ class ConfigHandler:
         with open(file_path,'r') as file:
             grid = yaml.safe_load(file)
         return grid
-    
-if __name__ == "__main__":
-    print(ConfigHandler.load_model_config())
-    print(ConfigHandler.load_split_config())
-    print(ConfigHandler.load_grid())

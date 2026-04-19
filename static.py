@@ -1,3 +1,26 @@
+"""
+Defines global constants used throughout the framework, organized into the following groups:
+
+    - Filter: Purification method names and their associated hyperparameter keys
+      (e.g., THRESHOLD, TOP_K, TOP_SINGULAR_R)
+
+    - Model Setup: Keys for model architecture configuration
+      (e.g., DEVICE, IN_CHANNEL, OUT_CHANNEL, MODEL)
+
+    - Hyperparameters: Keys for training and model hyperparameters
+      (e.g., NUM_LAYERS, LEARNING_RATE, HIDDEN_UNITS, EPOCHS, DROPOUT, OPTIMIZER_STATE)
+
+    - Hyperparameter Options: Supported values for optimizers, schedulers, and aggregations
+      (e.g., ADAM, SGD, STEP_LR, AVAILABLE_AGGRE)
+
+    - Paths: Directory paths for datasets, configs, logs, results, and cached predictions
+      (e.g., PATH_DATA, PATH_CONFIG_MODEL, PATH_RESULT, PATH_CACHED_PRED)
+
+    - Adversarial: Names and identifiers for supported adversarial attack methods
+      (e.g., NETTACK_NAME, FGA_NAME, SGA_NAME, PRBCD_NAME)
+"""
+
+
 #Filter
 PURIFICATION = "purification"
 THRESHOLD = "threshold"
