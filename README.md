@@ -3,6 +3,7 @@
 <img src="./doc/AGB_logo_adversarial_graph.svg" width="80%"/>
 </div>
 
+I updated this file
 
 **To setup the environment, please check out [setup.md](doc/Set%20up.md)**
 
