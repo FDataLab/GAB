@@ -22,6 +22,7 @@ class GNNGUARD(torch.nn.Module):
         whether to add self-loops to the input graph,
         by default False
     """
+
     def __init__(self, threshold: float = 0.1, add_self_loops: bool = False):
         super().__init__()
         self.threshold = threshold
@@ -30,8 +31,10 @@ class GNNGUARD(torch.nn.Module):
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         if edge_weight is not None:
-            warnings.warn("`edge_weight` is supported in GNNGUARD "
-                          "and will be ignored for computation.")
+            warnings.warn(
+                "`edge_weight` is supported in GNNGUARD "
+                "and will be ignored for computation."
+            )
 
         row, col = edge_index
         A, B = x[row], x[col]
@@ -45,12 +48,12 @@ class GNNGUARD(torch.nn.Module):
         att_score_norm = att_score / (row_sum[row] + EPS)
 
         if self.add_self_loops:
-            degree = scatter(torch.ones_like(att_score_norm), col,
-                             dim_size=x.size(0))
+            degree = scatter(torch.ones_like(att_score_norm), col, dim_size=x.size(0))
             self_weight = 1.0 / (degree + 1)
             att_score_norm = torch.cat([att_score_norm, self_weight])
-            loop_index = torch.arange(0, x.size(0), dtype=torch.long,
-                                      device=edge_index.device)
+            loop_index = torch.arange(
+                0, x.size(0), dtype=torch.long, device=edge_index.device
+            )
             loop_index = loop_index.unsqueeze(0).repeat(2, 1)
             edge_index = torch.cat([edge_index, loop_index], dim=1)
 

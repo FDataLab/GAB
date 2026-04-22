@@ -61,14 +61,27 @@ class RandomAttack(TargetedAttacker):
     ----
     * Please remember to call :meth:`reset` before each attack.
     """
-    def attack(self, target, *, num_budgets=None, threshold=0.5,
-               direct_attack=True, structure_attack=True, feature_attack=False,
-               disable=False):
 
-        super().attack(target, target_label=None, num_budgets=num_budgets,
-                       direct_attack=direct_attack,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+    def attack(
+        self,
+        target,
+        *,
+        num_budgets=None,
+        threshold=0.5,
+        direct_attack=True,
+        structure_attack=True,
+        feature_attack=False,
+        disable=False
+    ):
+
+        super().attack(
+            target,
+            target_label=None,
+            num_budgets=num_budgets,
+            direct_attack=direct_attack,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
         assert 0 < threshold < 1
 
         if direct_attack:
@@ -78,8 +91,9 @@ class RandomAttack(TargetedAttacker):
 
         num_chosen = 0
 
-        with tqdm(total=self.num_budgets, desc='Peturbing graph...',
-                  disable=disable) as pbar:
+        with tqdm(
+            total=self.num_budgets, desc="Peturbing graph...", disable=disable
+        ) as pbar:
             while num_chosen < self.num_budgets:
                 # randomly choose to add or remove edges
                 if random.random() <= threshold:
@@ -104,8 +118,7 @@ class RandomAttack(TargetedAttacker):
     def get_added_edge(self, influence_nodes: list) -> Optional[tuple]:
         u = random.choice(influence_nodes)
         neighbors = self.adjacency_matrix[u].indices.tolist()
-        attacker_nodes = list(self.nodes_set - set(neighbors) -
-                              set([self.target, u]))
+        attacker_nodes = list(self.nodes_set - set(neighbors) - set([self.target, u]))
 
         if len(attacker_nodes) == 0:
             return None

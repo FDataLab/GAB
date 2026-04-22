@@ -62,11 +62,20 @@ class MedianGCN(nn.Module):
     :class:`greatx.nn.layers.MedianConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 reduce: str = 'median', dropout: float = 0.5,
-                 bn: bool = False, normalize: bool = False, bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        reduce: str = "median",
+        dropout: float = 0.5,
+        bn: bool = False,
+        normalize: bool = False,
+        bias: bool = True,
+    ):
 
         super().__init__()
 
@@ -74,16 +83,20 @@ class MedianGCN(nn.Module):
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
             conv.append(
-                MedianConv(in_channels, hid, bias=bias, normalize=normalize,
-                           reduce=reduce))
+                MedianConv(
+                    in_channels, hid, bias=bias, normalize=normalize, reduce=reduce
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
             conv.append(nn.Dropout(dropout))
             in_channels = hid
         conv.append(
-            MedianConv(in_channels, out_channels, bias=bias,
-                       normalize=normalize, reduce=reduce))
+            MedianConv(
+                in_channels, out_channels, bias=bias, normalize=normalize, reduce=reduce
+            )
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):

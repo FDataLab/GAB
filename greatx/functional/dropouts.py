@@ -5,6 +5,7 @@ from torch import Tensor
 
 try:
     import torch_cluster  # noqa
+
     random_walk = torch.ops.torch_cluster.random_walk
 except ImportError:
     random_walk = None
@@ -13,9 +14,12 @@ from torch_geometric.utils import degree, sort_edge_index, subgraph
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 
-def drop_edge(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
-              p: float = 0.5,
-              training: bool = True) -> Tuple[Tensor, Optional[Tensor]]:
+def drop_edge(
+    edge_index: Tensor,
+    edge_weight: Optional[Tensor] = None,
+    p: float = 0.5,
+    training: bool = True,
+) -> Tuple[Tensor, Optional[Tensor]]:
     r"""DropEdge: Sampling edge using a uniform distribution
     from the `"DropEdge: Towards Deep Graph Convolutional
     Networks on Node Classification" <https://arxiv.org/abs/1907.10903>`_
@@ -56,9 +60,8 @@ def drop_edge(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
     :class:`greatx.nn.layers.DropEdge`
     """
 
-    if p < 0. or p > 1.:
-        raise ValueError(f'Dropout probability has to be between 0 and 1 '
-                         f'(got {p}')
+    if p < 0.0 or p > 1.0:
+        raise ValueError(f"Dropout probability has to be between 0 and 1 " f"(got {p}")
 
     if not training or not p:
         return edge_index, edge_weight
@@ -74,9 +77,12 @@ def drop_edge(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
 
 
 def drop_node(
-        edge_index: Tensor, edge_weight: Optional[Tensor] = None,
-        p: float = 0.5, training: bool = True,
-        num_nodes: Optional[int] = None) -> Tuple[Tensor, Optional[Tensor]]:
+    edge_index: Tensor,
+    edge_weight: Optional[Tensor] = None,
+    p: float = 0.5,
+    training: bool = True,
+    num_nodes: Optional[int] = None,
+) -> Tuple[Tensor, Optional[Tensor]]:
     """DropNode: Sampling node using a uniform distribution
     from the `"Graph Contrastive Learning
     with Augmentations" <https://arxiv.org/abs/2010.139023>`_
@@ -117,9 +123,8 @@ def drop_node(
     :class:`greatx.nn.layers.DropNode`
     """
 
-    if p < 0. or p > 1.:
-        raise ValueError(f'Dropout probability has to be between 0 and 1 '
-                         f'(got {p}')
+    if p < 0.0 or p > 1.0:
+        raise ValueError(f"Dropout probability has to be between 0 and 1 " f"(got {p}")
 
     if not training or not p:
         return edge_index, edge_weight
@@ -132,11 +137,17 @@ def drop_node(
     return subgraph(subset, edge_index, edge_weight)
 
 
-def drop_path(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
-              p: float = 0.5, walks_per_node: int = 1, walk_length: int = 3,
-              num_nodes: Optional[int] = None, start: str = 'node',
-              is_sorted: bool = False,
-              training: bool = True) -> Tuple[Tensor, Optional[Tensor]]:
+def drop_path(
+    edge_index: Tensor,
+    edge_weight: Optional[Tensor] = None,
+    p: float = 0.5,
+    walks_per_node: int = 1,
+    walk_length: int = 3,
+    num_nodes: Optional[int] = None,
+    start: str = "node",
+    is_sorted: bool = False,
+    training: bool = True,
+) -> Tuple[Tensor, Optional[Tensor]]:
     """DropPath: a structured form of :class:`greatx.functional.drop_edge`
     from the `"MaskGAE: Masked Graph Modeling Meets
     Graph Autoencoders" <https://arxiv.org/abs/2205.10053>`_
@@ -206,11 +217,10 @@ def drop_path(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
 
     if not training:
         return edge_index, edge_weight
-    if p < 0. or p > 1.:
-        raise ValueError(f'Sample probability has to be between 0 and 1 '
-                         f'(got {p}')
+    if p < 0.0 or p > 1.0:
+        raise ValueError(f"Sample probability has to be between 0 and 1 " f"(got {p}")
 
-    assert start in ['node', 'edge']
+    assert start in ["node", "edge"]
     num_edges = edge_index.size(1)
     edge_mask = edge_index.new_ones(num_edges, dtype=torch.bool)
 
@@ -218,25 +228,23 @@ def drop_path(edge_index: Tensor, edge_weight: Optional[Tensor] = None,
         return edge_index, edge_mask
 
     if random_walk is None:
-        raise ImportError('`dropout_path` requires `torch-cluster`.')
+        raise ImportError("`dropout_path` requires `torch-cluster`.")
 
     num_nodes = maybe_num_nodes(edge_index, num_nodes)
 
     if not is_sorted:
-        edge_index = sort_edge_index(edge_index, edge_weight,
-                                     num_nodes=num_nodes)
+        edge_index = sort_edge_index(edge_index, edge_weight, num_nodes=num_nodes)
         if edge_weight is not None:
             edge_index, edge_weight = edge_index
 
     row, col = edge_index
-    if start == 'edge':
+    if start == "edge":
         sample_mask = torch.rand(row.size(0), device=edge_index.device) <= p
         start = row[sample_mask].repeat(walks_per_node)
     else:
-        start = torch.randperm(
-            num_nodes,
-            device=edge_index.device)[:round(num_nodes *
-                                             p)].repeat(walks_per_node)
+        start = torch.randperm(num_nodes, device=edge_index.device)[
+            : round(num_nodes * p)
+        ].repeat(walks_per_node)
 
     deg = degree(row, num_nodes=num_nodes)
     rowptr = row.new_zeros(num_nodes + 1)

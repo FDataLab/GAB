@@ -66,11 +66,11 @@ class DICEAttack(RandomAttack):
     ----
     * Please remember to call :meth:`reset` before each attack.
     """
+
     def get_added_edge(self, influence_nodes: list) -> Optional[tuple]:
         u = random.choice(influence_nodes)
         neighbors = self.adjacency_matrix[u].indices.tolist()
-        attacker_nodes = list(self.nodes_set - set(neighbors) -
-                              set([self.target, u]))
+        attacker_nodes = list(self.nodes_set - set(neighbors) - set([self.target, u]))
 
         if len(attacker_nodes) == 0:
             return None

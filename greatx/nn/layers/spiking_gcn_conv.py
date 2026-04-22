@@ -65,7 +65,7 @@ class SpikingGCNonv(nn.Module):
         T: int = 20,
         tau: float = 1.0,
         v_threshold: float = 1.0,
-        v_reset: float = 0.,
+        v_reset: float = 0.0,
         cached: bool = False,
         add_self_loops: bool = True,
         normalize: bool = True,
@@ -83,8 +83,9 @@ class SpikingGCNonv(nn.Module):
 
         self._cached_x = None
 
-        self.lin = Linear(in_channels, out_channels, bias=bias,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=bias, weight_initializer="glorot"
+        )
         assert T > 0
         self.T = T
         self.encoder = PoissonEncoder()
@@ -102,8 +103,9 @@ class SpikingGCNonv(nn.Module):
         self._cached_x = None
         return self
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         cache = self._cached_x
@@ -111,12 +113,17 @@ class SpikingGCNonv(nn.Module):
         if cache is None:
             if self.add_self_loops:
                 edge_index, edge_weight = make_self_loops(
-                    edge_index, edge_weight, num_nodes=x.size(0))
+                    edge_index, edge_weight, num_nodes=x.size(0)
+                )
 
             if self.normalize:
                 edge_index, edge_weight = make_gcn_norm(
-                    edge_index, edge_weight, num_nodes=x.size(0),
-                    dtype=x.dtype, add_self_loops=False)
+                    edge_index,
+                    edge_weight,
+                    num_nodes=x.size(0),
+                    dtype=x.dtype,
+                    add_self_loops=False,
+                )
 
             for k in range(self.K):
                 x = spmm(x, edge_index, edge_weight)
@@ -126,7 +133,7 @@ class SpikingGCNonv(nn.Module):
         else:
             x = cache.detach()
 
-        spikes = 0.
+        spikes = 0.0
         for t in range(self.T):
             out = self.lin(self.encoder(x))
             spikes += self.neuron(out)
@@ -135,5 +142,7 @@ class SpikingGCNonv(nn.Module):
         return spikes / self.T
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels}, K={self.K})')
+        return (
+            f"{self.__class__.__name__}({self.in_channels}, "
+            f"{self.out_channels}, K={self.K})"
+        )

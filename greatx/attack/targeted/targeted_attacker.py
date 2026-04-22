@@ -32,6 +32,7 @@ class TargetedAttacker(FlipAttacker):
     :class:`greatx.attack.FlipAttacker`.
     It belongs to graph modification attack (GMA).
     """
+
     def reset(self) -> "TargetedAttacker":
         """Reset the state of the Attacker
 
@@ -50,8 +51,15 @@ class TargetedAttacker(FlipAttacker):
 
         return self
 
-    def attack(self, target, target_label, num_budgets, direct_attack,
-               structure_attack, feature_attack) -> "TargetedAttacker":
+    def attack(
+        self,
+        target,
+        target_label,
+        num_budgets,
+        direct_attack,
+        structure_attack,
+        feature_attack,
+    ) -> "TargetedAttacker":
         """Base method that describes the adversarial targeted attack.
 
         Parameters
@@ -75,15 +83,18 @@ class TargetedAttacker(FlipAttacker):
 
         if not _is_setup:
             raise RuntimeError(
-                f'{self.__class__.__name__} requires '
-                'a surrogate model to conduct attack. '
-                'Use `attacker.setup_surrogate(surrogate_model)`.')
+                f"{self.__class__.__name__} requires "
+                "a surrogate model to conduct attack. "
+                "Use `attacker.setup_surrogate(surrogate_model)`."
+            )
 
         if not self._is_reset:
-            raise RuntimeError('Before calling attack, you must reset '
-                               'your attacker. Call `attacker.reset()`.')
+            raise RuntimeError(
+                "Before calling attack, you must reset "
+                "your attacker. Call `attacker.reset()`."
+            )
 
-        if hasattr(target, 'item'):
+        if hasattr(target, "item"):
             target = target.item()
 
         if not isinstance(target, Number):
@@ -94,26 +105,30 @@ class TargetedAttacker(FlipAttacker):
 
         if not (structure_attack or feature_attack):
             raise RuntimeError(
-                'Either `structure_attack` or `feature_attack` must be True.')
+                "Either `structure_attack` or `feature_attack` must be True."
+            )
 
         if feature_attack and not self._allow_feature_attack:
             raise RuntimeError(
                 f"{self.name} does NOT support attacking features. "
                 "If the model can conduct feature attack, "
-                "please call `attacker.set_allow_feature_attack(True)`.")
+                "please call `attacker.set_allow_feature_attack(True)`."
+            )
 
         if structure_attack and not self._allow_structure_attack:
             raise RuntimeError(
                 f"{self.name} does NOT support attacking structures."
                 "If the model can conduct structure attack, "
-                "please call `attacker.set_allow_structure_attack(True)`.")
+                "please call `attacker.set_allow_structure_attack(True)`."
+            )
 
         max_perturbations = int(self._degree[target].item())
         if num_budgets is None:
             num_budgets = max_perturbations
         else:
             num_budgets = self._check_budget(
-                num_budgets, max_perturbations=max_perturbations)
+                num_budgets, max_perturbations=max_perturbations
+            )
 
         # int number
         self.target = target
@@ -123,11 +138,14 @@ class TargetedAttacker(FlipAttacker):
             if self.label is not None:
                 self.target_label = self.label[target]
             else:
-                raise RuntimeError("Please specify argument `target_label` "
-                                   "as the node label does not exist.")
+                raise RuntimeError(
+                    "Please specify argument `target_label` "
+                    "as the node label does not exist."
+                )
         else:
-            self.target_label = torch.as_tensor(target_label, dtype=torch.long,
-                                                device=self.device)
+            self.target_label = torch.as_tensor(
+                target_label, dtype=torch.long, device=self.device
+            )
 
         self.num_budgets = num_budgets
         self.direct_attack = direct_attack
@@ -165,4 +183,4 @@ class TargetedAttacker(FlipAttacker):
         if self.direct_attack:
             return condition
         else:
-            return (condition and self.target not in (u, v))
+            return condition and self.target not in (u, v)

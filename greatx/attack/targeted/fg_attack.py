@@ -91,14 +91,26 @@ class FGAttack(TargetedAttacker, Surrogate):
         self.modified_feat = self.feat.clone()
         return self
 
-    def attack(self, target, *, target_label=None, num_budgets=None,
-               direct_attack=True, structure_attack=True, feature_attack=False,
-               disable=False):
+    def attack(
+        self,
+        target,
+        *,
+        target_label=None,
+        num_budgets=None,
+        direct_attack=True,
+        structure_attack=True,
+        feature_attack=False,
+        disable=False
+    ):
 
-        super().attack(target, target_label, num_budgets=num_budgets,
-                       direct_attack=direct_attack,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            target,
+            target_label,
+            num_budgets=num_budgets,
+            direct_attack=direct_attack,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         if feature_attack:
             self._check_feature_matrix_binary()
@@ -111,15 +123,18 @@ class FGAttack(TargetedAttacker, Surrogate):
         modified_feat.requires_grad_(bool(feature_attack))
 
         target = torch.as_tensor(target, device=self.device, dtype=torch.long)
-        target_label = torch.as_tensor(target_label, device=self.device,
-                                       dtype=torch.long).view(-1)
+        target_label = torch.as_tensor(
+            target_label, device=self.device, dtype=torch.long
+        ).view(-1)
         num_nodes, num_feats = self.num_nodes, self.num_feats
 
-        for it in tqdm(range(self.num_budgets), desc='Peturbing graph...',
-                       disable=disable):
+        for it in tqdm(
+            range(self.num_budgets), desc="Peturbing graph...", disable=disable
+        ):
 
             adj_grad, feat_grad = self.compute_gradients(
-                modified_adj, modified_feat, target, target_label)
+                modified_adj, modified_feat, target, target_label
+            )
 
             adj_grad_score = modified_adj.new_zeros(1)
             feat_grad_score = modified_feat.new_zeros(1)
@@ -127,11 +142,13 @@ class FGAttack(TargetedAttacker, Surrogate):
             with torch.no_grad():
                 if structure_attack:
                     adj_grad_score = self.structure_score(
-                        modified_adj, adj_grad, target)
+                        modified_adj, adj_grad, target
+                    )
 
                 if feature_attack:
                     feat_grad_score = self.feature_score(
-                        modified_feat, feat_grad, target)
+                        modified_feat, feat_grad, target
+                    )
 
                 adj_max, adj_argmax = torch.max(adj_grad_score, dim=0)
                 feat_max, feat_argmax = torch.max(feat_grad_score, dim=0)
@@ -190,16 +207,15 @@ class FGAttack(TargetedAttacker, Surrogate):
         score[target] = -1
         return score.view(-1)
 
-    def compute_gradients(self, modified_adj, modified_feat, target,
-                          target_label):
+    def compute_gradients(self, modified_adj, modified_feat, target, target_label):
 
-        logit = self.surrogate(modified_feat, modified_adj)[target].view(
-            1, -1) / self.tau
+        logit = (
+            self.surrogate(modified_feat, modified_adj)[target].view(1, -1) / self.tau
+        )
         loss = F.cross_entropy(logit, target_label)
 
         if self.structure_attack and self.feature_attack:
-            return grad(loss, [modified_adj, modified_feat],
-                        create_graph=False)
+            return grad(loss, [modified_adj, modified_feat], create_graph=False)
 
         if self.structure_attack:
             return grad(loss, modified_adj, create_graph=False)[0], None

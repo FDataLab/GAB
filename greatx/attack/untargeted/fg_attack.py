@@ -77,12 +77,16 @@ class FGAttack(UntargetedAttacker, Surrogate):
     # FGAttack can conduct feature attack
     _allow_feature_attack: bool = True
 
-    def setup_surrogate(self, surrogate: torch.nn.Module, victim_nodes: Tensor,
-                        victim_labels: Optional[Tensor] = None, *,
-                        tau: float = 1.0):
+    def setup_surrogate(
+        self,
+        surrogate: torch.nn.Module,
+        victim_nodes: Tensor,
+        victim_labels: Optional[Tensor] = None,
+        *,
+        tau: float = 1.0
+    ):
 
-        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau,
-                                  freeze=True)
+        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau, freeze=True)
 
         if victim_nodes.dtype == torch.bool:
             victim_nodes = victim_nodes.nonzero().view(-1)
@@ -99,12 +103,20 @@ class FGAttack(UntargetedAttacker, Surrogate):
         self.modified_feat = self.feat.clone()
         return self
 
-    def attack(self, num_budgets=0.05, *, structure_attack=True,
-               feature_attack=False, disable=False):
+    def attack(
+        self,
+        num_budgets=0.05,
+        *,
+        structure_attack=True,
+        feature_attack=False,
+        disable=False
+    ):
 
-        super().attack(num_budgets=num_budgets,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            num_budgets=num_budgets,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         if feature_attack:
             self._check_feature_matrix_binary()
@@ -116,24 +128,23 @@ class FGAttack(UntargetedAttacker, Surrogate):
 
         num_nodes, num_feats = self.num_nodes, self.num_feats
 
-        for it in tqdm(range(self.num_budgets), desc='Peturbing graph...',
-                       disable=disable):
+        for it in tqdm(
+            range(self.num_budgets), desc="Peturbing graph...", disable=disable
+        ):
 
             adj_grad, feat_grad = self.compute_gradients(
-                modified_adj, modified_feat, self.victim_nodes,
-                self.victim_labels)
+                modified_adj, modified_feat, self.victim_nodes, self.victim_labels
+            )
 
             adj_grad_score = modified_adj.new_zeros(1)
             feat_grad_score = modified_feat.new_zeros(1)
 
             with torch.no_grad():
                 if structure_attack:
-                    adj_grad_score = self.structure_score(
-                        modified_adj, adj_grad)
+                    adj_grad_score = self.structure_score(modified_adj, adj_grad)
 
                 if feature_attack:
-                    feat_grad_score = self.feature_score(
-                        modified_feat, feat_grad)
+                    feat_grad_score = self.feature_score(modified_feat, feat_grad)
 
                 adj_max, adj_argmax = torch.max(adj_grad_score, dim=0)
                 feat_max, feat_argmax = torch.max(feat_grad_score, dim=0)
@@ -172,16 +183,15 @@ class FGAttack(UntargetedAttacker, Surrogate):
         score -= score.min()
         return score.view(-1)
 
-    def compute_gradients(self, modified_adj, modified_feat, victim_nodes,
-                          victim_labels):
+    def compute_gradients(
+        self, modified_adj, modified_feat, victim_nodes, victim_labels
+    ):
 
-        logit = self.surrogate(modified_feat,
-                               modified_adj)[victim_nodes] / self.tau
+        logit = self.surrogate(modified_feat, modified_adj)[victim_nodes] / self.tau
         loss = F.cross_entropy(logit, victim_labels)
 
         if self.structure_attack and self.feature_attack:
-            return grad(loss, [modified_adj, modified_feat],
-                        create_graph=False)
+            return grad(loss, [modified_adj, modified_feat], create_graph=False)
 
         if self.structure_attack:
             return grad(loss, modified_adj, create_graph=False)[0], None

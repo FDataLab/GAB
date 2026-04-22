@@ -44,9 +44,15 @@ class SATConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.SAT`
     """
-    def __init__(self, in_channels: int, out_channels: int,
-                 add_self_loops: bool = True, normalize: bool = True,
-                 bias: bool = False):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        add_self_loops: bool = True,
+        normalize: bool = True,
+        bias: bool = False,
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -54,12 +60,13 @@ class SATConv(nn.Module):
         self.add_self_loops = add_self_loops
         self.normalize = normalize
 
-        self.lin = Linear(in_channels, out_channels, bias=False,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=False, weight_initializer="glorot"
+        )
         if bias:
             self.bias = nn.Parameter(torch.Tensor(out_channels))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         self.reset_parameters()
 
@@ -75,11 +82,17 @@ class SATConv(nn.Module):
             edge_index, edge_weight = U, V
             if self.add_self_loops:
                 edge_index, edge_weight = add_self_loops(
-                    edge_index, edge_weight, num_nodes=x.size(0))
+                    edge_index, edge_weight, num_nodes=x.size(0)
+                )
             if self.normalize:
                 edge_index, edge_weight = gcn_norm(  # yapf: disable
-                    edge_index, edge_weight, x.size(0), False,
-                    add_self_loops=False, dtype=x.dtype)
+                    edge_index,
+                    edge_weight,
+                    x.size(0),
+                    False,
+                    add_self_loops=False,
+                    dtype=x.dtype,
+                )
 
             x = spmm(x, edge_index, edge_weight)
 
@@ -99,8 +112,7 @@ class SATConv(nn.Module):
         return x
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels})')
+        return f"{self.__class__.__name__}({self.in_channels}, " f"{self.out_channels})"
 
 
 # class SATConv(nn.Module):

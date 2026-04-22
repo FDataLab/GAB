@@ -16,10 +16,15 @@ __all__ = ["setup_logger", "get_logger"]
 # cache the opened file object, so that different calls to `setup_logger`
 # with the same file name can safely write to the same file.
 @functools.lru_cache(maxsize=None)
-def setup_logger(output: Optional[str] = None, name: str = "GreatX", *,
-                 distributed_rank: int = 0, mode: str = 'w',
-                 color: bool = True,
-                 abbrev_name: Optional[str] = None) -> logging.Logger:
+def setup_logger(
+    output: Optional[str] = None,
+    name: str = "GreatX",
+    *,
+    distributed_rank: int = 0,
+    mode: str = "w",
+    color: bool = True,
+    abbrev_name: Optional[str] = None
+) -> logging.Logger:
     """Initialize the GreatX logger and set its verbosity level to "DEBUG".
 
     Parameters
@@ -70,8 +75,9 @@ def setup_logger(output: Optional[str] = None, name: str = "GreatX", *,
     >>> logger = get_logger(name='my exp')
     """
     if color and colored is None:
-        raise RuntimeError("Please install 'termcolor' to use colored outputs"
-                           " when printing.")
+        raise RuntimeError(
+            "Please install 'termcolor' to use colored outputs" " when printing."
+        )
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
@@ -81,8 +87,8 @@ def setup_logger(output: Optional[str] = None, name: str = "GreatX", *,
         abbrev_name = name
 
     plain_formatter = logging.Formatter(
-        "[%(asctime)s] %(name)s %(levelname)s: %(message)s",
-        datefmt="%m/%d %H:%M:%S")
+        "[%(asctime)s] %(name)s %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S"
+    )
     # stdout logging: master only
     if distributed_rank == 0:
         ch = logging.StreamHandler(stream=sys.stdout)
@@ -149,7 +155,9 @@ class _ColorfulFormatter(logging.Formatter):
         log = super(_ColorfulFormatter, self).formatMessage(record)
         if record.levelno == logging.WARNING:
             prefix = colored("WARNING", "red", attrs=["blink"])
-        elif record.levelno == logging.ERROR or record.levelno == logging.CRITICAL:  # noqa
+        elif (
+            record.levelno == logging.ERROR or record.levelno == logging.CRITICAL
+        ):  # noqa
             prefix = colored("ERROR", "red", attrs=["blink", "underline"])
         else:
             return log

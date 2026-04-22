@@ -66,11 +66,21 @@ class SSGC(nn.Module):
     :class:`greatx.nn.layers.SSGConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels, out_channels, hids: List[int] = [],
-                 acts: List[str] = [], dropout: float = 0., K: int = 5,
-                 alpha: float = 0.1, bias: bool = True, cached: bool = True,
-                 bn: bool = False):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        hids: List[int] = [],
+        acts: List[str] = [],
+        dropout: float = 0.0,
+        K: int = 5,
+        alpha: float = 0.1,
+        bias: bool = True,
+        cached: bool = True,
+        bn: bool = False,
+    ):
         super().__init__()
 
         assert len(hids) == len(acts)
@@ -79,8 +89,10 @@ class SSGC(nn.Module):
         for i, (hid, act) in enumerate(zip(hids, acts)):
             if i == 0:
                 conv.append(
-                    SSGConv(in_channels, hid, bias=bias, K=K, alpha=alpha,
-                            cached=cached))
+                    SSGConv(
+                        in_channels, hid, bias=bias, K=K, alpha=alpha, cached=cached
+                    )
+                )
             else:
                 conv.append(nn.Linear(in_channels, hid, bias=bias))
             if bn:
@@ -91,8 +103,15 @@ class SSGC(nn.Module):
 
         if not hids:
             conv.append(
-                SSGConv(in_channels, out_channels, bias=bias, K=K, alpha=alpha,
-                        cached=cached))
+                SSGConv(
+                    in_channels,
+                    out_channels,
+                    bias=bias,
+                    K=K,
+                    alpha=alpha,
+                    cached=cached,
+                )
+            )
         else:
             conv.append(nn.Linear(in_channels, out_channels, bias=bias))
 
@@ -104,7 +123,7 @@ class SSGC(nn.Module):
     def cache_clear(self):
         """Clear cached inputs or intermediate results."""
         for layer in self.conv:
-            if hasattr(layer, 'cache_clear'):
+            if hasattr(layer, "cache_clear"):
                 layer.cache_clear()
         return self
 

@@ -14,6 +14,7 @@ from greatx.nn.models.surrogate import Surrogate
 
 class PGD:
     """Base class for :class:`PGDAttack`."""
+
     # PGDAttack cannot ensure that there is not singleton node after attacks.
     _allow_singleton: bool = True
 
@@ -37,11 +38,11 @@ class PGD:
 
         perturbations = self.perturbations
 
-        for epoch in tqdm(range(epochs), desc='PGD training...',
-                          disable=disable):
+        for epoch in tqdm(range(epochs), desc="PGD training...", disable=disable):
             lr = base_lr * num_budgets / math.sqrt(epoch + 1)
-            gradients = self.compute_gradients(perturbations, victim_nodes,
-                                               victim_labels)
+            gradients = self.compute_gradients(
+                perturbations, victim_nodes, victim_labels
+            )
 
             gradients = self.clip_grad(gradients, grad_clip)
 
@@ -68,17 +69,19 @@ class PGD:
         best_pert = None
 
         perturbations.detach_()
-        for it in tqdm(range(sample_epochs), desc='Bernoulli sampling...',
-                       disable=disable):
+        for it in tqdm(
+            range(sample_epochs), desc="Bernoulli sampling...", disable=disable
+        ):
             sampled = perturbations.bernoulli()
             if sampled.count_nonzero() <= self.num_budgets:
-                loss = self.compute_loss(symmetric(sampled), victim_nodes,
-                                         victim_labels)
+                loss = self.compute_loss(
+                    symmetric(sampled), victim_nodes, victim_labels
+                )
                 if best_loss < loss:
                     best_loss = loss
                     best_pert = sampled
 
-        row, col = torch.where(best_pert > 0.)
+        row, col = torch.where(best_pert > 0.0)
         for it, (u, v) in enumerate(zip(row.tolist(), col.tolist())):
             if self.adj[u, v] > 0:
                 self.remove_edge(u, v, it)
@@ -108,7 +111,8 @@ class PGD:
     ) -> Tensor:
         pert_sym = symmetric(perturbations)
         grad_outputs = grad(
-            self.compute_loss(pert_sym, victim_nodes, victim_labels), pert_sym)
+            self.compute_loss(pert_sym, victim_nodes, victim_labels), pert_sym
+        )
         return grad(pert_sym, perturbations, grad_outputs=grad_outputs[0])[0]
 
 
@@ -205,8 +209,7 @@ class PGDAttack(UntargetedAttacker, PGD, Surrogate):
             the attacker itself
         """
 
-        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau,
-                                  freeze=freeze)
+        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau, freeze=freeze)
 
         if victim_nodes.dtype == torch.bool:
             victim_nodes = victim_nodes.nonzero().view(-1)
@@ -215,8 +218,7 @@ class PGDAttack(UntargetedAttacker, PGD, Surrogate):
         if ground_truth:
             self.victim_labels = self.label[victim_nodes]
         else:
-            self.victim_labels = self.estimate_self_training_labels(
-                victim_nodes)
+            self.victim_labels = self.estimate_self_training_labels(victim_nodes)
 
         self.adj = self.get_dense_adj()
         return self
@@ -278,9 +280,11 @@ class PGDAttack(UntargetedAttacker, PGD, Surrogate):
             the attacker itself
         """
 
-        super().attack(num_budgets=num_budgets,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            num_budgets=num_budgets,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         return PGD.attack(
             self,

@@ -49,10 +49,17 @@ class SSGConv(nn.Module):
 
     _cached_x: Optional[Tensor]
 
-    def __init__(self, in_channels: int, out_channels: int, K: int = 5,
-                 alpha: float = 0.1, cached: bool = False,
-                 add_self_loops: bool = True, normalize: bool = True,
-                 bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        K: int = 5,
+        alpha: float = 0.1,
+        cached: bool = False,
+        add_self_loops: bool = True,
+        normalize: bool = True,
+        bias: bool = True,
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -65,8 +72,9 @@ class SSGConv(nn.Module):
 
         self._cached_x = None
 
-        self.lin = Linear(in_channels, out_channels, bias=bias,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=bias, weight_initializer="glorot"
+        )
 
         self.reset_parameters()
 
@@ -79,8 +87,9 @@ class SSGConv(nn.Module):
         self._cached_x = None
         return self
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         cache = self._cached_x
@@ -88,12 +97,17 @@ class SSGConv(nn.Module):
         if cache is None:
             if self.add_self_loops:
                 edge_index, edge_weight = make_self_loops(
-                    edge_index, edge_weight, num_nodes=x.size(0))
+                    edge_index, edge_weight, num_nodes=x.size(0)
+                )
 
             if self.normalize:
                 edge_index, edge_weight = make_gcn_norm(
-                    edge_index, edge_weight, num_nodes=x.size(0),
-                    dtype=x.dtype, add_self_loops=False)
+                    edge_index,
+                    edge_weight,
+                    num_nodes=x.size(0),
+                    dtype=x.dtype,
+                    add_self_loops=False,
+                )
 
             x_out = x * self.alpha
             for k in range(self.K):
@@ -108,5 +122,7 @@ class SSGConv(nn.Module):
         return self.lin(x_out)
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels}, K={self.K}, alpha={self.alpha})')
+        return (
+            f"{self.__class__.__name__}({self.in_channels}, "
+            f"{self.out_channels}, K={self.K}, alpha={self.alpha})"
+        )

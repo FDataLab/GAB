@@ -5,9 +5,12 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.data import Data
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils import (degree, dropout_adj,
-                                   from_scipy_sparse_matrix,
-                                   to_scipy_sparse_matrix)
+from torch_geometric.utils import (
+    degree,
+    dropout_adj,
+    from_scipy_sparse_matrix,
+    to_scipy_sparse_matrix,
+)
 
 from greatx.functional import to_dense_adj
 from greatx.nn.layers.gcn_conv import dense_gcn_norm
@@ -30,7 +33,8 @@ class JaccardPurification(BaseTransform):
         whether such defense strategy allow singleton nodes,
         by default False
     """
-    def __init__(self, threshold: float = 0., allow_singleton: bool = False):
+
+    def __init__(self, threshold: float = 0.0, allow_singleton: bool = False):
         # TODO: add percentage purification
         self.threshold = threshold
         self.allow_singleton = allow_singleton
@@ -56,9 +60,10 @@ class JaccardPurification(BaseTransform):
         return data
 
     def __repr__(self) -> str:
-        desc = f"threshold={self.threshold}, " +\
-            f"allow_singleton={self.allow_singleton}"
-        return f'{self.__class__.__name__}({desc})'
+        desc = (
+            f"threshold={self.threshold}, " + f"allow_singleton={self.allow_singleton}"
+        )
+        return f"{self.__class__.__name__}({desc})"
 
 
 class CosinePurification(BaseTransform):
@@ -78,7 +83,8 @@ class CosinePurification(BaseTransform):
     allow_singleton : bool, optional
         whether such defense strategy allow singleton nodes, by default False
     """
-    def __init__(self, threshold: float = 0., allow_singleton: bool = False):
+
+    def __init__(self, threshold: float = 0.0, allow_singleton: bool = False):
         # TODO: add percentage purification
         self.threshold = threshold
         self.allow_singleton = allow_singleton
@@ -104,9 +110,10 @@ class CosinePurification(BaseTransform):
         return data
 
     def __repr__(self) -> str:
-        desc = f"threshold={self.threshold}, " +\
-            f"allow_singleton={self.allow_singleton}"
-        return f'{self.__class__.__name__}({desc})'
+        desc = (
+            f"threshold={self.threshold}, " + f"allow_singleton={self.allow_singleton}"
+        )
+        return f"{self.__class__.__name__}({desc})"
 
 
 class SVDPurification(BaseTransform):
@@ -135,8 +142,14 @@ class SVDPurification(BaseTransform):
     be compatible with torch_geometric whose :obj:`adj_t`
     denotes the :class:`torch_sparse.SparseTensor`.
     """
-    def __init__(self, K: int = 50, threshold: float = 0.01,
-                 binaryzation: bool = False, remove_edge_index: bool = True):
+
+    def __init__(
+        self,
+        K: int = 50,
+        threshold: float = 0.01,
+        binaryzation: bool = False,
+        remove_edge_index: bool = True,
+    ):
         # TODO: add percentage purification
         super().__init__()
         self.K = K
@@ -149,26 +162,31 @@ class SVDPurification(BaseTransform):
             data = copy(data)
 
         device = data.edge_index.device
-        adj_matrix = to_scipy_sparse_matrix(data.edge_index, data.edge_weight,
-                                            num_nodes=data.num_nodes).tocsr()
-        adj_matrix = svd(adj_matrix, K=self.K, threshold=self.threshold,
-                         binaryzation=self.binaryzation)
+        adj_matrix = to_scipy_sparse_matrix(
+            data.edge_index, data.edge_weight, num_nodes=data.num_nodes
+        ).tocsr()
+        adj_matrix = svd(
+            adj_matrix,
+            K=self.K,
+            threshold=self.threshold,
+            binaryzation=self.binaryzation,
+        )
 
         # using transposed matrix instead
-        data.adj_t = torch.as_tensor(adj_matrix.A.T, dtype=torch.float,
-                                     device=device)
+        data.adj_t = torch.as_tensor(adj_matrix.A.T, dtype=torch.float, device=device)
         if self.remove_edge_index:
             del data.edge_index, data.edge_weight
         else:
             edge_index, edge_weight = from_scipy_sparse_matrix(adj_matrix)
-            data.edge_index, data.edge_weight = edge_index.to(
-                device), edge_weight.to(device)
+            data.edge_index, data.edge_weight = edge_index.to(device), edge_weight.to(
+                device
+            )
 
         return data
 
     def __repr__(self) -> str:
         desc = f"K={self.K}, threshold={self.threshold}"
-        return f'{self.__class__.__name__}({desc})'
+        return f"{self.__class__.__name__}({desc})"
 
 
 class EigenDecomposition(BaseTransform):
@@ -196,8 +214,10 @@ class EigenDecomposition(BaseTransform):
     be compatible with torch_geometric whose :obj:`adj_t`
     denotes the :class:`torch_sparse.SparseTensor`.
     """
-    def __init__(self, K: int = 50, normalize: bool = True,
-                 remove_edge_index: bool = True):
+
+    def __init__(
+        self, K: int = 50, normalize: bool = True, remove_edge_index: bool = True
+    ):
         super().__init__()
         self.K = K
         self.normalize = normalize
@@ -208,8 +228,9 @@ class EigenDecomposition(BaseTransform):
             data = copy(data)
 
         device = data.edge_index.device
-        adj_matrix = to_scipy_sparse_matrix(data.edge_index, data.edge_weight,
-                                            num_nodes=data.num_nodes).tocsr()
+        adj_matrix = to_scipy_sparse_matrix(
+            data.edge_index, data.edge_weight, num_nodes=data.num_nodes
+        ).tocsr()
 
         if self.normalize:
             adj_matrix = scipy_normalize(adj_matrix)
@@ -218,7 +239,7 @@ class EigenDecomposition(BaseTransform):
         V, U = sp.linalg.eigsh(adj_matrix, k=self.K)
         adj_matrix = (U * V) @ U.T
         # sparsification
-        adj_matrix[adj_matrix < 0] = 0.
+        adj_matrix[adj_matrix < 0] = 0.0
 
         V = torch.as_tensor(V, dtype=torch.float)
         U = torch.as_tensor(U, dtype=torch.float)
@@ -226,19 +247,19 @@ class EigenDecomposition(BaseTransform):
         data.V, data.U = V.to(device), U.to(device)
 
         # using transposed matrix instead
-        data.adj_t = torch.as_tensor(adj_matrix.T, dtype=torch.float,
-                                     device=device)
+        data.adj_t = torch.as_tensor(adj_matrix.T, dtype=torch.float, device=device)
 
         if self.remove_edge_index:
             del data.edge_index, data.edge_weight
         else:
             edge_index, edge_weight = from_scipy_sparse_matrix(adj_matrix)
-            data.edge_index, data.edge_weight = edge_index.to(
-                device), edge_weight.to(device)
+            data.edge_index, data.edge_weight = edge_index.to(device), edge_weight.to(
+                device
+            )
         return data
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(K={self.K})'
+        return f"{self.__class__.__name__}(K={self.K})"
 
 
 class TSVD(BaseTransform):
@@ -267,8 +288,10 @@ class TSVD(BaseTransform):
     be compatible with torch_geometric whose :obj:`adj_t`
     denotes the :class:`torch_sparse.SparseTensor`.
     """
-    def __init__(self, K: int = 50, num_channels: int = 5, p: float = 0.1,
-                 normalize: bool = True):
+
+    def __init__(
+        self, K: int = 50, num_channels: int = 5, p: float = 0.1, normalize: bool = True
+    ):
         super().__init__()
         self.K = K
         self.p = p
@@ -279,8 +302,9 @@ class TSVD(BaseTransform):
         if not inplace:
             data = copy(data)
 
-        adjs = self.augmentation(data.edge_index, data.edge_weight,
-                                 num_nodes=data.num_nodes)
+        adjs = self.augmentation(
+            data.edge_index, data.edge_weight, num_nodes=data.num_nodes
+        )
         adjs = t_svd(adjs, self.K)
         if self.normalize:
             for i in range(self.num_channels):
@@ -303,15 +327,15 @@ class TSVD(BaseTransform):
         device = edge_index.device
 
         for _ in range(self.num_channels - 1):
-            edge_index_remain = dropout_adj(edge_index, p=self.p,
-                                            force_undirected=True)[0]
+            edge_index_remain = dropout_adj(
+                edge_index, p=self.p, force_undirected=True
+            )[0]
             num_edges_dropped = num_edges - edge_index_remain.size(1)
-            random_edges = torch.randint(num_nodes,
-                                         size=(2, num_edges_dropped // 2),
-                                         device=device)
+            random_edges = torch.randint(
+                num_nodes, size=(2, num_edges_dropped // 2), device=device
+            )
             random_edges2 = random_edges
-            (random_edges2[0], random_edges2[1]) = (random_edges[1],
-                                                    random_edges[0])
+            (random_edges2[0], random_edges2[1]) = (random_edges[1], random_edges[0])
             # Actually, `random_edges2` and `random_edges` share the
             # same memory I guess the authors of this paper intended to
             # get an undirected version of randomly sampled edges,
@@ -319,7 +343,8 @@ class TSVD(BaseTransform):
             # However, once I corrected it, the model perfomance
             # dropped dramatically. I don't know why and just leave it...
             new_edge_index = torch.cat(
-                [edge_index_remain, random_edges, random_edges2], dim=1)
+                [edge_index_remain, random_edges, random_edges2], dim=1
+            )
             # using transposed matrix instead
             adj = to_dense_adj(new_edge_index, num_nodes=num_nodes).t()
             if self.normalize:
@@ -330,18 +355,30 @@ class TSVD(BaseTransform):
 
     def __repr__(self) -> str:
         desc = f"K={self.K}, threshold={self.threshold}"
-        return f'{self.__class__.__name__}({desc})'
+        return f"{self.__class__.__name__}({desc})"
 
 
 def jaccard_similarity(A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
     intersection = torch.count_nonzero(A * B, axis=1)
-    J = intersection * 1.0 / (torch.count_nonzero(
-        A, dim=1) + torch.count_nonzero(B, dim=1) - intersection + 1e-7)
+    J = (
+        intersection
+        * 1.0
+        / (
+            torch.count_nonzero(A, dim=1)
+            + torch.count_nonzero(B, dim=1)
+            - intersection
+            + 1e-7
+        )
+    )
     return J
 
 
-def svd(adj_matrix: sp.csr_matrix, K: int = 50, threshold: float = 0.01,
-        binaryzation: bool = False) -> sp.csr_matrix:
+def svd(
+    adj_matrix: sp.csr_matrix,
+    K: int = 50,
+    threshold: float = 0.01,
+    binaryzation: bool = False,
+) -> sp.csr_matrix:
 
     adj_matrix = adj_matrix.asfptype()
 
@@ -350,7 +387,7 @@ def svd(adj_matrix: sp.csr_matrix, K: int = 50, threshold: float = 0.01,
 
     if threshold is not None:
         # sparsification
-        adj_matrix[adj_matrix <= threshold] = 0.
+        adj_matrix[adj_matrix <= threshold] = 0.0
 
     adj_matrix = sp.csr_matrix(adj_matrix)
 
@@ -362,7 +399,7 @@ def svd(adj_matrix: sp.csr_matrix, K: int = 50, threshold: float = 0.01,
 
 
 def t_svd(adjs: torch.Tensor, K: int = 50) -> torch.Tensor:
-    print('=== t-SVD: rank={} ==='.format(K))
+    print("=== t-SVD: rank={} ===".format(K))
     adjs = adjs.unsqueeze(-1) if adjs.ndim == 2 else adjs
     n1, n2, n3 = adjs.size()
     xx = torch.complex(torch.empty_like(adjs), torch.empty_like(adjs))

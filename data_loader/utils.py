@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 
+
 def sparse_adjacency_to_edge_list(sparse_adj_matrix):
     """
     Converts a sparse adjacency matrix in CSR format to NumPy edge list.
@@ -13,15 +14,16 @@ def sparse_adjacency_to_edge_list(sparse_adj_matrix):
     2D array: edge list in shape (2,number of edges).
     """
 
-     # Find the indices of the non-zero elements in the matrix
+    # Find the indices of the non-zero elements in the matrix
     row_indices, col_indices = sparse_adj_matrix.nonzero()
-    
+
     # Pair the indices to form the edge list
     edge_list = list(zip(row_indices, col_indices))
 
-    edge_list =np.array(edge_list).T
-    
+    edge_list = np.array(edge_list).T
+
     return edge_list
+
 
 def edge_list_to_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix:
     """
@@ -47,9 +49,12 @@ def edge_list_to_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix:
     num_nodes = max(row_indices.max(), col_indices.max()) + 1
 
     # Create the sparse adjacency matrix in CSR format
-    sparse_adj_matrix = csr_matrix((data, (row_indices, col_indices)), shape=(num_nodes, num_nodes))
+    sparse_adj_matrix = csr_matrix(
+        (data, (row_indices, col_indices)), shape=(num_nodes, num_nodes)
+    )
 
     return sparse_adj_matrix
+
 
 def edge_list_to_sysmetric_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix:
     """
@@ -70,7 +75,9 @@ def edge_list_to_sysmetric_sparse_adjacency(edge_list: np.ndarray) -> csr_matrix
     data = np.ones(edge_list.shape[0])
 
     # Create symmetric matrix
-    adj_matrix = csr_matrix((data, (row, col)), shape=(edge_list.max() + 1, edge_list.max() + 1))
+    adj_matrix = csr_matrix(
+        (data, (row, col)), shape=(edge_list.max() + 1, edge_list.max() + 1)
+    )
     adj_matrix = adj_matrix + adj_matrix.T
 
     # Ensure no double counting of self-loops

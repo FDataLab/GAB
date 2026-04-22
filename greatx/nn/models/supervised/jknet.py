@@ -52,20 +52,30 @@ class JKNet(nn.Module):
 
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16] * 3, acts: List[str] = ['relu'] * 3,
-                 dropout: float = 0.5, mode: str = 'cat', bn: bool = False,
-                 bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16] * 3,
+        acts: List[str] = ["relu"] * 3,
+        dropout: float = 0.5,
+        mode: str = "cat",
+        bn: bool = False,
+        bias: bool = True,
+    ):
 
         super().__init__()
         self.mode = mode
         num_JK_layers = len(list(hids)) - 1  # number of JK layers
 
         if num_JK_layers <= 1 or len(set(hids)) != 1:
-            raise ValueError("The number of hidden layers "
-                             "should be greater than 2 and the "
-                             "hidden units must be equal.")
+            raise ValueError(
+                "The number of hidden layers "
+                "should be greater than 2 and the "
+                "hidden units must be equal."
+            )
 
         conv = []
         assert len(hids) == len(acts)
@@ -84,19 +94,19 @@ class JKNet(nn.Module):
 
         assert len(conv) == num_JK_layers + 1
 
-        if self.mode == 'lstm':
+        if self.mode == "lstm":
             self.jump = JumpingKnowledge(mode, hid, num_JK_layers)
         else:
             self.jump = JumpingKnowledge(mode)
 
-        if self.mode == 'cat':
+        if self.mode == "cat":
             hid = hid * (num_JK_layers + 1)
 
         self.mlp = nn.Linear(hid, out_channels, bias=bias)
 
     def reset_parameters(self):
         self.conv.reset_parameters()
-        if self.mode == 'lstm':
+        if self.mode == "lstm":
             self.lstm.reset_parameters()
             self.attn.reset_parameters()
         self.mlp.reset_parameters()
@@ -109,10 +119,13 @@ class JKNet(nn.Module):
 
         x = self.jump(xs)
 
-        edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                num_nodes=x.size(0),
-                                                dtype=x.dtype,
-                                                add_self_loops=True)
+        edge_index, edge_weight = make_gcn_norm(
+            edge_index,
+            edge_weight,
+            num_nodes=x.size(0),
+            dtype=x.dtype,
+            add_self_loops=True,
+        )
 
         out = spmm(x, edge_index, edge_weight)
 

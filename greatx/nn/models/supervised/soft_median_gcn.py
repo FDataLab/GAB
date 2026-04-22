@@ -66,12 +66,21 @@ class SoftMedianGCN(nn.Module):
     :class:`greatx.nn.layers.SoftMedianConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 dropout: float = 0.5, bias: bool = True,
-                 normalize: bool = False, row_normalize: bool = False,
-                 cached: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        bias: bool = True,
+        normalize: bool = False,
+        row_normalize: bool = False,
+        cached: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
 
@@ -79,9 +88,15 @@ class SoftMedianGCN(nn.Module):
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
             conv.append(
-                SoftMedianConv(in_channels, hid, bias=bias,
-                               normalize=normalize,
-                               row_normalize=row_normalize, cached=cached))
+                SoftMedianConv(
+                    in_channels,
+                    hid,
+                    bias=bias,
+                    normalize=normalize,
+                    row_normalize=row_normalize,
+                    cached=cached,
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
@@ -89,9 +104,15 @@ class SoftMedianGCN(nn.Module):
             in_channels = hid
 
         conv.append(
-            SoftMedianConv(in_channels, out_channels, bias=bias,
-                           normalize=normalize, row_normalize=row_normalize,
-                           cached=cached))
+            SoftMedianConv(
+                in_channels,
+                out_channels,
+                bias=bias,
+                normalize=normalize,
+                row_normalize=row_normalize,
+                cached=cached,
+            )
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):
@@ -101,7 +122,7 @@ class SoftMedianGCN(nn.Module):
     def cache_clear(self):
         """Clear cached inputs or intermediate results."""
         for conv in self.conv:
-            if hasattr(conv, '_cached_edges'):
+            if hasattr(conv, "_cached_edges"):
                 conv._cached_edges = None
         return self
 

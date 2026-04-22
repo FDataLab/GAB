@@ -73,13 +73,14 @@ class DGI(nn.Module):
     * Author's code: https://github.com/PetarV-/DGI
 
     """
+
     @wrapper
     def __init__(
         self,
         in_channels: int,
         hids: List[int] = [512],
-        acts: List[str] = ['prelu'],
-        dropout: float = 0.,
+        acts: List[str] = ["prelu"],
+        dropout: float = 0.0,
         bias: bool = True,
         bn: bool = False,
     ):
@@ -135,6 +136,7 @@ class DGI(nn.Module):
         return pos, neg
 
     def loss(self, postive: Tensor, negative: Tensor) -> Tensor:
-        loss = bce(postive, postive.new_ones(postive.size(0))) + \
-            bce(negative, negative.new_zeros(negative.size(0)))
+        loss = bce(postive, postive.new_ones(postive.size(0))) + bce(
+            negative, negative.new_zeros(negative.size(0))
+        )
         return loss

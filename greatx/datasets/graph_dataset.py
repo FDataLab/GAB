@@ -11,20 +11,20 @@ from torch_geometric.utils import remove_self_loops, to_undirected
 def load_npz(file_name: str) -> Data:
     with np.load(file_name, allow_pickle=True) as loader:
         loader = dict(loader)
-        adj_matrix = loader['adj_matrix'].item()
+        adj_matrix = loader["adj_matrix"].item()
         adj_matrix = adj_matrix.maximum(adj_matrix.T)
-        if not 'node_attr' in loader:
-            loader['node_attr'] = np.eye(adj_matrix.shape[0])
+        if not "node_attr" in loader:
+            loader["node_attr"] = np.eye(adj_matrix.shape[0])
 
-        attr_matrix = loader['node_attr']
+        attr_matrix = loader["node_attr"]
 
-        if attr_matrix.dtype.kind == 'O':
+        if attr_matrix.dtype.kind == "O":
             # scipy sparse matrix
             attr_matrix = attr_matrix.item().A
 
-        labels = loader['node_label']
+        labels = loader["node_label"]
         if labels.shape[0] != adj_matrix.shape[0]:
-            _labels = np.full((adj_matrix.shape[0] - labels.shape[0], ), -1)
+            _labels = np.full((adj_matrix.shape[0] - labels.shape[0],), -1)
             labels = np.hstack([labels, _labels])
 
         if np.unique(labels).shape[0] != labels.max() + 1:
@@ -44,24 +44,24 @@ def load_npz(file_name: str) -> Data:
 
 
 DATASETS = {
-    'citeseer',
-    'citeseer_full',
-    'cora',
-    'cora_ml',
-    'cora_full',
-    'amazon_cs',
-    'amazon_photo',
-    'coauthor_cs',
-    'coauthor_phy',
-    'polblogs',
-    'karate_club',
-    'pubmed',
-    'flickr',
-    'blogcatalog',
-    'dblp',
-    'acm',
-    'uai',
-    'pdn',
+    "citeseer",
+    "citeseer_full",
+    "cora",
+    "cora_ml",
+    "cora_full",
+    "amazon_cs",
+    "amazon_photo",
+    "coauthor_cs",
+    "coauthor_phy",
+    "polblogs",
+    "karate_club",
+    "pubmed",
+    "flickr",
+    "blogcatalog",
+    "dblp",
+    "acm",
+    "uai",
+    "pdn",
 }
 
 
@@ -109,35 +109,39 @@ class GraphDataset(InMemoryDataset):
     see https://github.com/EdisonLeeeee/GraphData
     """
 
-    url = 'https://github.com/EdisonLeeeee/GraphData/raw/master/' + \
-        'datasets/{}.npz'
+    url = "https://github.com/EdisonLeeeee/GraphData/raw/master/" + "datasets/{}.npz"
 
-    def __init__(self, root: str, name: str,
-                 transform: Optional[Callable] = None,
-                 pre_transform: Optional[Callable] = None):
+    def __init__(
+        self,
+        root: str,
+        name: str,
+        transform: Optional[Callable] = None,
+        pre_transform: Optional[Callable] = None,
+    ):
         self.name = name.lower()
         if self.name not in DATASETS:
             raise ValueError(
-                f'Unknown dataset {name}. Please take a look at '
-                '`GraphDataset.available_datasets()` for more information.')
+                f"Unknown dataset {name}. Please take a look at "
+                "`GraphDataset.available_datasets()` for more information."
+            )
         super().__init__(root, transform, pre_transform)
         self.data, self.slices = torch.load(self.processed_paths[0])
 
     @property
     def raw_dir(self) -> str:
-        return osp.join(self.root, f"GreatX-{self.name}", 'raw')
+        return osp.join(self.root, f"GreatX-{self.name}", "raw")
 
     @property
     def processed_dir(self) -> str:
-        return osp.join(self.root, f"GreatX-{self.name}", 'processed')
+        return osp.join(self.root, f"GreatX-{self.name}", "processed")
 
     @property
     def raw_file_names(self) -> str:
-        return f'{self.name}.npz'
+        return f"{self.name}.npz"
 
     @property
     def processed_file_names(self) -> str:
-        return 'data.pt'
+        return "data.pt"
 
     def download(self):
         download_url(self.url.format(self.name), self.raw_dir)
@@ -150,9 +154,8 @@ class GraphDataset(InMemoryDataset):
 
     @staticmethod
     def available_datasets() -> List[str]:
-        """Return all available datasets.
-        """
+        """Return all available datasets."""
         return list(DATASETS)
 
     def __repr__(self) -> str:
-        return f'GreatX-{self.name.capitalize()}'
+        return f"GreatX-{self.name.capitalize()}"

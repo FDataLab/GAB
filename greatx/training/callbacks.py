@@ -38,15 +38,17 @@ class ModeKeys(object):
     * `PREDICT`: prediction/inference mode.
     """
 
-    TRAIN = 'train'
-    TEST = 'test'
-    PREDICT = 'predict'
+    TRAIN = "train"
+    TEST = "test"
+    PREDICT = "predict"
 
 
 class CallbackList:
     """Container abstracting a list of callbacks."""
-    def __init__(self, callbacks=None, add_history=False, add_progbar=False,
-                 model=None, **params):
+
+    def __init__(
+        self, callbacks=None, add_history=False, add_progbar=False, model=None, **params
+    ):
         """Container for `Callback` instances.
 
         This object wraps a list of `Callback` instances, making it possible
@@ -71,8 +73,9 @@ class CallbackList:
         if params:
             self.set_params(params)
 
-        self._check_timing = any(cbk.__class__.__name__ not in globals()
-                                 for cbk in self.callbacks)
+        self._check_timing = any(
+            cbk.__class__.__name__ not in globals() for cbk in self.callbacks
+        )
         self._num_batches_for_timing_check = 5
         self._hook_times = {}
         self._batch_start_time = None
@@ -117,16 +120,16 @@ class CallbackList:
         if not self.callbacks:
             return
 
-        if hook == 'begin':
+        if hook == "begin":
             self._call_batch_begin_hook(mode, batch, logs)
-        elif hook == 'end':
+        elif hook == "end":
             self._call_batch_end_hook(mode, batch, logs)
         else:
-            raise ValueError('Unrecognized hook: {}'.format(hook))
+            raise ValueError("Unrecognized hook: {}".format(hook))
 
     def _call_batch_begin_hook(self, mode, batch, logs):
         """Helper function for `on_*_batch_begin` methods."""
-        hook_name = 'on_{mode}_batch_begin'.format(mode=mode)
+        hook_name = "on_{mode}_batch_begin".format(mode=mode)
         self._call_batch_hook_helper(hook_name, batch, logs)
 
         if self._check_timing:
@@ -134,7 +137,7 @@ class CallbackList:
 
     def _call_batch_end_hook(self, mode, batch, logs):
         """Helper function for `on_*_batch_end` methods."""
-        hook_name = 'on_{mode}_batch_end'.format(mode=mode)
+        hook_name = "on_{mode}_batch_end".format(mode=mode)
 
         if self._check_timing and batch >= 1:
             batch_time = time.time() - self._batch_start_time
@@ -144,28 +147,37 @@ class CallbackList:
 
         if len(self._batch_times) >= self._num_batches_for_timing_check:
             end_hook_name = hook_name
-            begin_hook_name = 'on_{mode}_batch_begin'.format(mode=mode)
+            begin_hook_name = "on_{mode}_batch_begin".format(mode=mode)
             avg_batch_time = sum(self._batch_times) / len(self._batch_times)
             avg_end_hook_time = sum(self._hook_times[end_hook_name]) / len(
-                self._hook_times[end_hook_name])
+                self._hook_times[end_hook_name]
+            )
             avg_begin_hook_time = sum(self._hook_times[begin_hook_name]) / len(
-                self._hook_times[begin_hook_name])
+                self._hook_times[begin_hook_name]
+            )
 
             threshold_time = 1.0 * avg_batch_time
             warning_msg = (
-                'Callback method `{hook}` is slow compared to '
-                'the batch time (batch time: {batch_time:.4f}s vs '
-                '`{hook}` time: {hook_time:.4f}s). Check your callbacks.')
+                "Callback method `{hook}` is slow compared to "
+                "the batch time (batch time: {batch_time:.4f}s vs "
+                "`{hook}` time: {hook_time:.4f}s). Check your callbacks."
+            )
             if avg_begin_hook_time > threshold_time:
                 logging.warning(
-                    warning_msg.format(hook=begin_hook_name,
-                                       batch_time=avg_batch_time,
-                                       hook_time=avg_begin_hook_time))
+                    warning_msg.format(
+                        hook=begin_hook_name,
+                        batch_time=avg_batch_time,
+                        hook_time=avg_begin_hook_time,
+                    )
+                )
             if avg_end_hook_time > threshold_time:
                 logging.warning(
-                    warning_msg.format(hook=end_hook_name,
-                                       batch_time=avg_batch_time,
-                                       hook_time=avg_end_hook_time))
+                    warning_msg.format(
+                        hook=end_hook_name,
+                        batch_time=avg_batch_time,
+                        hook_time=avg_end_hook_time,
+                    )
+                )
             self._check_timing = False
             self._batch_start_time = None
             self._batch_times = []
@@ -205,10 +217,10 @@ class CallbackList:
             self.on_predict_end()
 
     def on_batch_begin(self, batch, logs=None):
-        self._call_batch_hook(ModeKeys.TRAIN, 'begin', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TRAIN, "begin", batch, logs=logs)
 
     def on_batch_end(self, batch, logs=None):
-        self._call_batch_hook(ModeKeys.TRAIN, 'end', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TRAIN, "end", batch, logs=logs)
 
     def on_epoch_begin(self, epoch, logs=None):
         """Calls the `on_epoch_begin` methods of its callbacks.
@@ -248,7 +260,7 @@ class CallbackList:
                 Typically, the values of the `Model`'s metrics are returned.
                 Example: `{'loss': 0.2, 'acc': 0.7}`.
         """
-        self._call_batch_hook(ModeKeys.TRAIN, 'begin', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TRAIN, "begin", batch, logs=logs)
 
     def on_train_batch_end(self, batch, logs=None):
         """Calls the `on_train_batch_end` methods of its callbacks.
@@ -257,7 +269,7 @@ class CallbackList:
             batch: Integer, index of batch within the current epoch.
             logs: Dict. Aggregated metric results up until this batch.
         """
-        self._call_batch_hook(ModeKeys.TRAIN, 'end', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TRAIN, "end", batch, logs=logs)
 
     def on_test_batch_begin(self, batch, logs=None):
         """Calls the `on_test_batch_begin` methods of its callbacks.
@@ -268,7 +280,7 @@ class CallbackList:
                 Typically, the values of the `Model`'s metrics are returned.
                 Example: `{'loss': 0.2, 'acc': 0.7}`.
         """
-        self._call_batch_hook(ModeKeys.TEST, 'begin', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TEST, "begin", batch, logs=logs)
 
     def on_test_batch_end(self, batch, logs=None):
         """Calls the `on_test_batch_end` methods of its callbacks.
@@ -277,7 +289,7 @@ class CallbackList:
             batch: Integer, index of batch within the current epoch.
             logs: Dict. Aggregated metric results up until this batch.
         """
-        self._call_batch_hook(ModeKeys.TEST, 'end', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.TEST, "end", batch, logs=logs)
 
     def on_predict_batch_begin(self, batch, logs=None):
         """Calls the `on_predict_batch_begin` methods of its callbacks.
@@ -288,7 +300,7 @@ class CallbackList:
               it typically returns a dict with a key 'outputs' containing
               the model's outputs.
         """
-        self._call_batch_hook(ModeKeys.PREDICT, 'begin', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.PREDICT, "begin", batch, logs=logs)
 
     def on_predict_batch_end(self, batch, logs=None):
         """Calls the `on_predict_batch_end` methods of its callbacks.
@@ -297,7 +309,7 @@ class CallbackList:
             batch: Integer, index of batch within the current epoch.
             logs: Dict. Aggregated metric results up until this batch.
         """
-        self._call_batch_hook(ModeKeys.PREDICT, 'end', batch, logs=logs)
+        self._call_batch_hook(ModeKeys.PREDICT, "end", batch, logs=logs)
 
     def on_train_begin(self, logs=None):
         """Calls the `on_train_begin` methods of its callbacks.
@@ -375,10 +387,10 @@ class CallbackList:
 
         format_string = ""
         for ix, cb in enumerate(self.callbacks):
-            format_string += f'\n  ({ix}){cb},'
+            format_string += f"\n  ({ix}){cb},"
         if format_string:
             # replace last ``,`` as ``\n``
-            format_string = format_string[:-1] + '\n'
+            format_string = format_string[:-1] + "\n"
         return f"{self.__class__.__name__}({format_string})"
 
     __repr__ = __str__
@@ -404,6 +416,7 @@ class Callback:
     take as argument will contain keys for quantities relevant to
     the current batch or epoch (see method-specific docstrings).
     """
+
     def __init__(self):
         self.validation_data = None
         self.model = None
@@ -624,6 +637,7 @@ class History(Callback):
     every Keras model. The `History` object
     gets returned by the `fit` method of models.
     """
+
     def __init__(self):
         super().__init__()
         self.history = BunchDict()
@@ -646,18 +660,19 @@ class History(Callback):
 
 class TerminateOnNaN(Callback):
     """Callback that terminates training when a NaN
-    loss is encountered. """
+    loss is encountered."""
+
     def __init__(self):
         super().__init__()
         self._supports_tf_logs = True
 
     def on_batch_end(self, batch, logs=None):
         logs = logs or {}
-        loss = logs.get('loss')
+        loss = logs.get("loss")
         if loss is not None:
             loss = float(loss)
             if np.isnan(loss) or np.isinf(loss):
-                print('Batch %d: Invalid loss, terminating training' % (batch))
+                print("Batch %d: Invalid loss, terminating training" % (batch))
                 self.model.stop_training = True
 
 
@@ -666,14 +681,22 @@ class ModelCheckpoint(Callback):
     at some frequency.
 
     """
-    def __init__(self, filepath, monitor='val_loss', verbose=0,
-                 save_best_only=True, save_weights_only=True, autoload=True,
-                 mode='auto', **kwargs):
+
+    def __init__(
+        self,
+        filepath,
+        monitor="val_loss",
+        verbose=0,
+        save_best_only=True,
+        save_weights_only=True,
+        autoload=True,
+        mode="auto",
+        **kwargs,
+    ):
         super().__init__()
         self.monitor = monitor
         self.verbose = verbose
-        self.filepath = filepath if filepath.endswith(
-            '.pth') else filepath + '.pth'
+        self.filepath = filepath if filepath.endswith(".pth") else filepath + ".pth"
         self.save_best_only = save_best_only
         self.epochs_since_last_save = 0
         self._batches_seen_since_last_saving = 0
@@ -682,27 +705,28 @@ class ModelCheckpoint(Callback):
 
         if autoload and not save_weights_only:
             logging.warning(
-                '`autoload` is only work for `save_weights_only=True`, '
-                'fallback to `save_weights_only.')
+                "`autoload` is only work for `save_weights_only=True`, "
+                "fallback to `save_weights_only."
+            )
             save_weights_only = True
 
         self.save_weights_only = save_weights_only
         self.autoload = autoload
 
-        if mode not in ['auto', 'min', 'max']:
+        if mode not in ["auto", "min", "max"]:
             logging.warning(
-                'ModelCheckpoint mode %s is unknown, '
-                'fallback to auto mode.', mode)
-            mode = 'auto'
+                "ModelCheckpoint mode %s is unknown, " "fallback to auto mode.", mode
+            )
+            mode = "auto"
 
-        if mode == 'min':
+        if mode == "min":
             self.monitor_op = np.less
             self.best = np.Inf
-        elif mode == 'max':
+        elif mode == "max":
             self.monitor_op = np.greater
             self.best = -np.Inf
         else:
-            if 'loss' in self.monitor:
+            if "loss" in self.monitor:
                 self.monitor_op = np.less
                 self.best = np.Inf
             else:
@@ -751,15 +775,23 @@ class ModelCheckpoint(Callback):
                 current = logs.get(self.monitor)
                 if current is None:
                     logging.warning(
-                        'Can save best model only with %s available, '
-                        'skipping.', self.monitor)
+                        "Can save best model only with %s available, " "skipping.",
+                        self.monitor,
+                    )
                 else:
                     if self.monitor_op(current, self.best):
                         if self.verbose > 0:
-                            print('\nEpoch %05d: %s improved from %0.5f '
-                                  'to %0.5f, saving model to %s' %
-                                  (epoch + 1, self.monitor, self.best, current,
-                                   filepath))
+                            print(
+                                "\nEpoch %05d: %s improved from %0.5f "
+                                "to %0.5f, saving model to %s"
+                                % (
+                                    epoch + 1,
+                                    self.monitor,
+                                    self.best,
+                                    current,
+                                    filepath,
+                                )
+                            )
                         self.best = current
                         if self.save_weights_only:
                             torch.save(self.model.state_dict(), filepath)
@@ -769,12 +801,12 @@ class ModelCheckpoint(Callback):
                     else:
                         if self.verbose > 0:
                             print(
-                                '\nEpoch %05d: %s did not improve from %0.5f' %
-                                (epoch + 1, self.monitor, self.best))
+                                "\nEpoch %05d: %s did not improve from %0.5f"
+                                % (epoch + 1, self.monitor, self.best)
+                            )
             else:
                 if self.verbose > 0:
-                    print('\nEpoch %05d: saving model to %s' %
-                          (epoch + 1, filepath))
+                    print("\nEpoch %05d: saving model to %s" % (epoch + 1, filepath))
                 if self.save_weights_only:
                     torch.save(self.model.state_dict(), filepath)
                 else:
@@ -782,10 +814,12 @@ class ModelCheckpoint(Callback):
                 self._filepaths.append(filepath)
 
         except IOError as e:
-            if 'is a directory' in str(e.args[0]).lower():
-                raise IOError('Please specify a non-directory filepath for '
-                              'ModelCheckpoint. Filepath used is an existing '
-                              'directory: {}'.format(filepath))
+            if "is a directory" in str(e.args[0]).lower():
+                raise IOError(
+                    "Please specify a non-directory filepath for "
+                    "ModelCheckpoint. Filepath used is an existing "
+                    "directory: {}".format(filepath)
+                )
             # Re-throw the error for any other causes.
             raise e
 
@@ -797,21 +831,26 @@ class ModelCheckpoint(Callback):
             # placeholders can cause formatting to fail.
             file_path = self.filepath.format(epoch=epoch + 1, **logs)
         except KeyError as e:
-            raise KeyError('Failed to format this callback filepath: "{}". '
-                           'Reason: {}'.format(self.filepath, e))
+            raise KeyError(
+                'Failed to format this callback filepath: "{}". '
+                "Reason: {}".format(self.filepath, e)
+            )
         return file_path
 
     def __str__(self) -> str:
         format_string = ""
         attrs = {
-            'monitor', 'verbose', 'filepath', 'save_best_only',
-            'save_weights_only'
+            "monitor",
+            "verbose",
+            "filepath",
+            "save_best_only",
+            "save_weights_only",
         }
         for attr in attrs:
-            format_string += f'\n  {attr}={getattr(self,attr)},'
+            format_string += f"\n  {attr}={getattr(self,attr)},"
         if format_string:
             # replace last ``,`` as ``\n``
-            format_string = format_string[:-1] + '\n'
+            format_string = format_string[:-1] + "\n"
         return f"{self.__class__.__name__}({format_string})"
 
     __repr__ = __str__
@@ -851,8 +890,16 @@ class EarlyStopping(Callback):
           baseline.
 
     """
-    def __init__(self, monitor='val_loss', min_delta=0, patience=0, verbose=0,
-                 mode='auto', baseline=None):
+
+    def __init__(
+        self,
+        monitor="val_loss",
+        min_delta=0,
+        patience=0,
+        verbose=0,
+        mode="auto",
+        baseline=None,
+    ):
         super().__init__()
 
         self.monitor = monitor
@@ -865,18 +912,18 @@ class EarlyStopping(Callback):
         self.best_weights = None
         self.mode = mode
 
-        if mode not in ['auto', 'min', 'max']:
+        if mode not in ["auto", "min", "max"]:
             logging.warning(
-                'EarlyStopping mode %s is unknown, '
-                'fallback to auto mode.', mode)
-            mode = 'auto'
+                "EarlyStopping mode %s is unknown, " "fallback to auto mode.", mode
+            )
+            mode = "auto"
 
-        if mode == 'min':
+        if mode == "min":
             self.monitor_op = np.less
-        elif mode == 'max':
+        elif mode == "max":
             self.monitor_op = np.greater
         else:
-            if 'loss' in self.monitor:
+            if "loss" in self.monitor:
                 self.monitor_op = np.less
             else:
                 self.monitor_op = np.greater
@@ -901,8 +948,7 @@ class EarlyStopping(Callback):
         self.wait += 1
         if self._is_improvement(current, self.best):
             self.best = current
-            if self.baseline is None or self._is_improvement(
-                    current, self.baseline):
+            if self.baseline is None or self._is_improvement(current, self.baseline):
                 self.wait = 0
 
         if self.wait >= self.patience:
@@ -911,16 +957,18 @@ class EarlyStopping(Callback):
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0 and self.verbose > 0:
-            print('Epoch %05d: early stopping' % (self.stopped_epoch + 1))
+            print("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
 
     def get_monitor_value(self, logs):
         logs = logs or {}
         monitor_value = logs.get(self.monitor)
         if monitor_value is None:
             logging.warning(
-                'Early stopping conditioned on metric `%s` '
-                'which is not available. Available metrics are: %s',
-                self.monitor, ','.join(list(logs.keys())))
+                "Early stopping conditioned on metric `%s` "
+                "which is not available. Available metrics are: %s",
+                self.monitor,
+                ",".join(list(logs.keys())),
+            )
         return monitor_value
 
     def _is_improvement(self, monitor_value, reference_value):
@@ -928,12 +976,12 @@ class EarlyStopping(Callback):
 
     def __str__(self) -> str:
         format_string = ""
-        attrs = {'monitor', 'verbose', 'patience', 'min_delta', 'mode'}
+        attrs = {"monitor", "verbose", "patience", "min_delta", "mode"}
         for attr in attrs:
-            format_string += f'\n  {attr}={getattr(self,attr)},'
+            format_string += f"\n  {attr}={getattr(self,attr)},"
         if format_string:
             # replace last ``,`` as ``\n``
-            format_string = format_string[:-1] + '\n'
+            format_string = format_string[:-1] + "\n"
         return f"{self.__class__.__name__}({format_string})"
 
     __repr__ = __str__
@@ -943,6 +991,7 @@ class ProgbarLogger(Callback):
     """Callback that prints metrics to stdout.
     TODO: on_[test/predict]_[begin/end] haven't been tested.
     """
+
     def __init__(self):
         super().__init__()
         # Defaults to all Model's metrics except for loss.
@@ -953,8 +1002,8 @@ class ProgbarLogger(Callback):
         self.epochs = None
 
     def set_params(self, params):
-        self.verbose = params['verbose']
-        self.epochs = params['epochs']
+        self.verbose = params["verbose"]
+        self.epochs = params["epochs"]
         self.target = self.epochs
 
     def on_train_begin(self, logs=None):
@@ -971,7 +1020,7 @@ class ProgbarLogger(Callback):
     def on_epoch_begin(self, epoch, logs=None):
         self._maybe_init_progbar()
         if self.verbose > 2 and self.epochs > 1:
-            print('Epoch %d/%d' % (epoch + 1, self.epochs))
+            print("Epoch %d/%d" % (epoch + 1, self.epochs))
 
     def on_train_batch_end(self, batch, logs=None):
         self._batch_update_progbar(batch, logs)
@@ -1005,7 +1054,8 @@ class ProgbarLogger(Callback):
         if self.progbar is None:
             self.progbar = Progbar(
                 target=self.target,
-                verbose=self.verbose - 2 if self.verbose > 2 else self.verbose)
+                verbose=self.verbose - 2 if self.verbose > 2 else self.verbose,
+            )
 
     def _batch_update_progbar(self, batch, logs=None):
         """Updates the progbar."""
@@ -1026,12 +1076,12 @@ class ProgbarLogger(Callback):
 
     def __str__(self) -> str:
         format_string = ""
-        attrs = {'epochs', 'verbose'}
+        attrs = {"epochs", "verbose"}
         for attr in attrs:
-            format_string += f'\n  {attr}={getattr(self,attr)},'
+            format_string += f"\n  {attr}={getattr(self,attr)},"
         if format_string:
             # replace last ``,`` as ``\n``
-            format_string = format_string[:-1] + '\n'
+            format_string = format_string[:-1] + "\n"
         return f"{self.__class__.__name__}({format_string})"
 
     __repr__ = __str__
@@ -1063,7 +1113,9 @@ class Optimizer(Callback):
         self.optimizer.step()
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(optimizer=" +\
-            f"{self.optimizer.__class__.__name__})"
+        return (
+            f"{self.__class__.__name__}(optimizer="
+            + f"{self.optimizer.__class__.__name__})"
+        )
 
     __repr__ = __str__

@@ -66,13 +66,14 @@ class CCA_SSG(torch.nn.Module):
     * Author's code: https://github.com/hengruizhang98/CCA-SSG
 
     """
+
     @wrapper
     def __init__(
         self,
         in_channels: int,
         hids: List[int] = [512, 512],
-        acts: List[str] = ['prelu', 'prelu'],
-        dropout: float = 0.,
+        acts: List[str] = ["prelu", "prelu"],
+        dropout: float = 0.0,
         lambd: float = 1e-3,
         bias: bool = True,
         bn: bool = False,
@@ -84,8 +85,7 @@ class CCA_SSG(torch.nn.Module):
 
         if dropout_edge is None:
             # TODO: support them
-            raise ImportError(
-                "Please install the latest version of `torch_geometric`.")
+            raise ImportError("Please install the latest version of `torch_geometric`.")
 
         encoder = []
         for hid, act in zip(hids, acts):

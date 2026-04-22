@@ -1,8 +1,8 @@
-from torch import Tensor
 from typing import Any, Callable, Dict, Final, List, Optional, Tuple, Union
-from torch_geometric.typing import Adj, OptTensor
-import torch
 
+import torch
+from torch import Tensor
+from torch_geometric.typing import Adj, OptTensor
 
 """
 Provides the interface for any defense/victim model to be trained and attacked
@@ -12,6 +12,7 @@ https://pytorch-geometric.readthedocs.io/en/latest/_modules/torch_geometric/nn/m
 July 08 2024
 
 """
+
 
 class IBassicGNN(torch.nn.Module):
     r"""An abstract class for implementing basic GNN models.
@@ -47,10 +48,9 @@ class IBassicGNN(torch.nn.Module):
         **kwargs (optional): Additional arguments of the underlying
             :class:`torch_geometric.nn.conv.MessagePassing` layers.
     """
-    
 
     def __init__(
-         self,
+        self,
         in_channels: int,
         hidden_channels: int,
         num_layers: int,
@@ -66,7 +66,7 @@ class IBassicGNN(torch.nn.Module):
     ):
         super.__init__()
         pass
-    
+
     def reset_parameters(self):
         pass
 
@@ -82,5 +82,3 @@ class IBassicGNN(torch.nn.Module):
         num_sampled_edges_per_hop: Optional[List[int]] = None,
     ) -> Tensor:
         pass
-
-

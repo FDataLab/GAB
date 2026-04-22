@@ -52,11 +52,19 @@ class GNNGUARD(nn.Module):
     :class:`greatx.defense.GNNGUARD`
     :class:`greatx.nn.models.supervised.GCN`
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 dropout: float = 0.5, bn: bool = False,
-                 normalize: bool = True, bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        bn: bool = False,
+        normalize: bool = True,
+        bias: bool = True,
+    ):
 
         super().__init__()
 
@@ -65,8 +73,14 @@ class GNNGUARD(nn.Module):
         conv.append(GNNGUARDLayer(add_self_loops=True))
         for hid, act in zip(hids, acts):
             conv.append(
-                GCNConv(in_channels, hid, bias=bias, add_self_loops=False,
-                        normalize=normalize))
+                GCNConv(
+                    in_channels,
+                    hid,
+                    bias=bias,
+                    add_self_loops=False,
+                    normalize=normalize,
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
@@ -74,8 +88,14 @@ class GNNGUARD(nn.Module):
             conv.append(nn.Dropout(dropout))
             in_channels = hid
         conv.append(
-            GCNConv(in_channels, out_channels, add_self_loops=False, bias=bias,
-                    normalize=normalize))
+            GCNConv(
+                in_channels,
+                out_channels,
+                add_self_loops=False,
+                bias=bias,
+                normalize=normalize,
+            )
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):
@@ -90,5 +110,5 @@ class GNNGUARD(nn.Module):
                 x = layer(x, edge_index, edge_weight)
             else:
                 x = layer(x)
-        self.edge_idx = edge_index # new
+        self.edge_idx = edge_index  # new
         return x

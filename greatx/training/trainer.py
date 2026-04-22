@@ -7,16 +7,15 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch_geometric.data import Data
 
-from greatx.training.callbacks import (Callback, CallbackList, Optimizer,
-                                       Scheduler)
+from greatx.training.callbacks import Callback, CallbackList, Optimizer, Scheduler
 from greatx.utils import BunchDict, Progbar, repeat
 
 # A method which calculates additional losses
-LOSS = 'loss'
+LOSS = "loss"
 
 # A method which calculates custom supervised loss,
 # if not specified, use cross-entropy loss by default
-CUSTOM_LOSS = 'custom_loss'
+CUSTOM_LOSS = "custom_loss"
 
 
 class Trainer:
@@ -63,12 +62,13 @@ class Trainer:
     # see :class:`UnsupervisedTrainer`.
     supervised = True
 
-    def __init__(self, model: nn.Module,
-                 device: Union[str, torch.device] = 'cpu', **cfg):
+    def __init__(
+        self, model: nn.Module, device: Union[str, torch.device] = "cpu", **cfg
+    ):
         self.device = torch.device(device)
         self.model = model.to(self.device)
 
-        if not self.supervised and not hasattr(model, 'loss'):
+        if not self.supervised and not hasattr(model, "loss"):
             raise RuntimeError(
                 "The unsupervised loss must implemented in the `model.loss()`!"
             )
@@ -84,10 +84,15 @@ class Trainer:
         self.optimizer = self.config_optimizer()
         self.scheduler = self.config_scheduler(self.optimizer)
 
-    def fit(self, data: Union[Data, Tuple[Data, Data]],
-            mask: Optional[Union[Tensor, Tuple[Tensor, Tensor]]] = None,
-            callbacks: Optional[Callback] = None, verbose: Optional[int] = 1,
-            epochs: int = 100, prefix: str = 'val') -> "Trainer":
+    def fit(
+        self,
+        data: Union[Data, Tuple[Data, Data]],
+        mask: Optional[Union[Tensor, Tuple[Tensor, Tensor]]] = None,
+        callbacks: Optional[Callback] = None,
+        verbose: Optional[int] = 1,
+        epochs: int = 100,
+        prefix: str = "val",
+    ) -> "Trainer":
         """Simple training method designed for `:attr:model`
 
         Parameters
@@ -130,20 +135,21 @@ class Trainer:
             train_data, *val_data = data
         else:
             train_data = data
-            val_data = (data, )
+            val_data = (data,)
 
         if isinstance(mask, tuple):
             assert len(mask) >= 2
             train_mask, *val_mask = mask
         else:
             train_mask = mask
-            val_mask = (mask, )
+            val_mask = (mask,)
 
         # case1: one data for multiple mask
         # case2: one mask for multiple data
         # case3: multiple data for multiple mask
-        assert (len(val_data) == 1 or len(val_mask) == 1
-                or (len(val_data) == len(val_mask)))
+        assert (
+            len(val_data) == 1 or len(val_mask) == 1 or (len(val_data) == len(val_mask))
+        )
 
         num_validas = max(len(val_data), len(val_mask))
         val_data = repeat(val_data, num_validas)
@@ -151,7 +157,8 @@ class Trainer:
 
         # Setup callbacks
         self.callbacks = callbacks = self.config_callbacks(
-            verbose, epochs, callbacks=callbacks)
+            verbose, epochs, callbacks=callbacks
+        )
 
         logs = BunchDict()
 
@@ -170,8 +177,7 @@ class Trainer:
                         val_logs = self.test_step(data, mask)
                         postfix = "" if num_validas == 1 else f"_{ix}"
                         val_logs = {
-                            f'{prefix}_{k}{postfix}': v
-                            for k, v in val_logs.items()
+                            f"{prefix}_{k}{postfix}": v for k, v in val_logs.items()
                         }
                         logs.update(val_logs)
 
@@ -206,7 +212,7 @@ class Trainer:
 
         model.train()
         data = data.to(self.device)
-        adj_t = getattr(data, 'adj_t', None)
+        adj_t = getattr(data, "adj_t", None)
         y = data.y.squeeze()
 
         if adj_t is None:
@@ -215,7 +221,7 @@ class Trainer:
             outs = model(data.x, adj_t)
 
         if not isinstance(outs, tuple):
-            outs = outs,
+            outs = (outs,)
         # In case multiple outputs are returned
         out = outs[0]
 
@@ -231,7 +237,7 @@ class Trainer:
                 # use default loss function: cross-entropy
                 loss = F.cross_entropy(out, y)
         else:
-            loss = 0.
+            loss = 0.0
 
         if hasattr(model, LOSS):
             loss += getattr(model, LOSS)(*outs)  # add additional loss
@@ -240,13 +246,15 @@ class Trainer:
         self.callbacks.on_train_batch_end(0)
 
         if self.supervised:
-            return dict(loss=loss.item(),
-                        acc=out.argmax(-1).eq(y).float().mean().item())
+            return dict(
+                loss=loss.item(), acc=out.argmax(-1).eq(y).float().mean().item()
+            )
         else:
             return dict(loss=loss.item())
 
-    def evaluate(self, data: Data, mask: Optional[Tensor] = None,
-                 verbose: Optional[int] = 1) -> BunchDict:
+    def evaluate(
+        self, data: Data, mask: Optional[Tensor] = None, verbose: Optional[int] = 1
+    ) -> BunchDict:
         """Simple evaluation step for `:attr:model`
 
         Parameters
@@ -296,7 +304,7 @@ class Trainer:
         model = self.model
         model.eval()
         data = data.to(self.device)
-        adj_t = getattr(data, 'adj_t', None)
+        adj_t = getattr(data, "adj_t", None)
         y = data.y.squeeze()
 
         if adj_t is None:
@@ -310,11 +318,9 @@ class Trainer:
 
         loss = F.cross_entropy(out, y)
 
-        return dict(loss=loss.item(),
-                    acc=out.argmax(-1).eq(y).float().mean().item())
+        return dict(loss=loss.item(), acc=out.argmax(-1).eq(y).float().mean().item())
 
-    def predict_step(self, data: Data,
-                     mask: Optional[Tensor] = None) -> Tensor:
+    def predict_step(self, data: Data, mask: Optional[Tensor] = None) -> Tensor:
         """One-step prediction on the inputs.
 
         Parameters
@@ -332,7 +338,7 @@ class Trainer:
         model = self.model
         model.eval()
         data = data.to(self.device)
-        adj_t = getattr(data, 'adj_t', None)
+        adj_t = getattr(data, "adj_t", None)
 
         if adj_t is None:
             out = model(data.x, data.edge_index, data.edge_weight)
@@ -345,8 +351,10 @@ class Trainer:
 
     @torch.no_grad()
     def predict(
-        self, data: Data, mask: Optional[Tensor] = None,
-        transform: Callable = torch.nn.Softmax(dim=-1)
+        self,
+        data: Data,
+        mask: Optional[Tensor] = None,
+        transform: Callable = torch.nn.Softmax(dim=-1),
     ) -> Tensor:
         """
         Parameters
@@ -370,10 +378,11 @@ class Trainer:
         return out
 
     def config_optimizer(self) -> torch.optim.Optimizer:
-        lr = self.cfg.get('lr', 0.01)
-        weight_decay = self.cfg.get('weight_decay', 5e-4)
-        return torch.optim.Adam(self.model.parameters(), lr=lr,
-                                weight_decay=weight_decay)
+        lr = self.cfg.get("lr", 0.01)
+        weight_decay = self.cfg.get("weight_decay", 5e-4)
+        return torch.optim.Adam(
+            self.model.parameters(), lr=lr, weight_decay=weight_decay
+        )
 
     def reset_optimizer(
         self,
@@ -411,9 +420,9 @@ class Trainer:
         """
         if self.optimizer is not None:
             if lr is not None:
-                self.cfg['lr'] = lr
+                self.cfg["lr"] = lr
             if weight_decay is not None:
-                self.cfg['weight_decay'] = weight_decay
+                self.cfg["weight_decay"] = weight_decay
             self.optimizer = self.config_optimizer()
             self.scheduler = self.config_scheduler(self.optimizer)
         return self
@@ -421,10 +430,12 @@ class Trainer:
     def config_scheduler(self, optimizer: torch.optim.Optimizer):
         return None
 
-    def config_callbacks(self, verbose, epochs,
-                         callbacks=None) -> CallbackList:
-        callbacks = CallbackList(callbacks=callbacks, add_history=True,
-                                 add_progbar=True if verbose else False)
+    def config_callbacks(self, verbose, epochs, callbacks=None) -> CallbackList:
+        callbacks = CallbackList(
+            callbacks=callbacks,
+            add_history=True,
+            add_progbar=True if verbose else False,
+        )
         if self.optimizer is not None:
             callbacks.append(Optimizer(self.optimizer))
         if self.scheduler is not None:
@@ -445,7 +456,7 @@ class Trainer:
     def cache_clear(self) -> "Trainer":
         """Clear cached inputs or intermediate results
         of the model."""
-        if hasattr(self.model, 'cache_clear'):
+        if hasattr(self.model, "cache_clear"):
             self.model.cache_clear()
         return self
 
@@ -457,7 +468,7 @@ class Trainer:
 
     def extra_repr(self) -> str:
         string = ""
-        blank = ' ' * (len(self.__class__.__name__) + 1)
+        blank = " " * (len(self.__class__.__name__) + 1)
         for k, v in self.cfg.items():
             if v is None:
                 continue

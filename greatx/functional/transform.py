@@ -5,7 +5,7 @@ from torch import Tensor
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_sparse import SparseTensor
 
-__all__ = ['to_sparse_tensor', 'to_dense_adj', 'to_sparse_adj']
+__all__ = ["to_sparse_tensor", "to_dense_adj", "to_sparse_adj"]
 
 
 def to_sparse_tensor(
@@ -36,8 +36,11 @@ def to_sparse_tensor(
     """
     num_nodes = maybe_num_nodes(edge_index, num_nodes)
     return SparseTensor.from_edge_index(
-        edge_index, edge_weight, is_sorted=is_sorted,
-        sparse_sizes=(num_nodes, num_nodes)).to(edge_index.device)
+        edge_index,
+        edge_weight,
+        is_sorted=is_sorted,
+        sparse_sizes=(num_nodes, num_nodes),
+    ).to(edge_index.device)
 
 
 def to_dense_adj(
@@ -120,7 +123,6 @@ def to_sparse_adj(
         edge_attr = torch.ones(edge_index.size(1), device=edge_index.device)
 
     size = tuple(size) + edge_attr.size()[1:]
-    out = torch.sparse_coo_tensor(edge_index, edge_attr, size,
-                                  device=edge_index.device)
+    out = torch.sparse_coo_tensor(edge_index, edge_attr, size, device=edge_index.device)
     out = out.coalesce()
     return out

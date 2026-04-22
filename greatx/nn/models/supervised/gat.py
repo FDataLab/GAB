@@ -54,18 +54,29 @@ class GAT(nn.Module):
     * Pytorch implementation: https://github.com/Diego999/pyGAT
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [8], num_heads: List[int] = [8],
-                 acts: List[str] = ['elu'], dropout: float = 0.6,
-                 bias: bool = True, bn: bool = False, includes=['num_heads']):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [8],
+        num_heads: List[int] = [8],
+        acts: List[str] = ["elu"],
+        dropout: float = 0.6,
+        bias: bool = True,
+        bn: bool = False,
+        includes=["num_heads"],
+    ):
         super().__init__()
         head = 1
         conv = []
         for hid, num_head, act in zip(hids, num_heads, acts):
             conv.append(
-                GATConv(in_channels * head, hid, heads=num_head, bias=bias,
-                        dropout=dropout))
+                GATConv(
+                    in_channels * head, hid, heads=num_head, bias=bias, dropout=dropout
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid * num_head))
             conv.append(activations.get(act))
@@ -74,8 +85,15 @@ class GAT(nn.Module):
             head = num_head
 
         conv.append(
-            GATConv(in_channels * head, out_channels, heads=1, bias=bias,
-                    concat=False, dropout=dropout))
+            GATConv(
+                in_channels * head,
+                out_channels,
+                heads=1,
+                bias=bias,
+                concat=False,
+                dropout=dropout,
+            )
+        )
 
         self.conv = Sequential(*conv)
 

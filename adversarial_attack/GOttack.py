@@ -1,24 +1,27 @@
-
 """
 Author: Bao Ngo
 Source: https://github.com/cakcora/GOttack
 Reference: https://openreview.net/forum?id=YbURbViE7l.
 """
+
 import warnings
+from copy import copy
+
+import numpy as np
+import pandas as pd
+import scipy.sparse as sp
 import torch
 from deeprobust.graph import utils
-import numpy as np
-import scipy.sparse as sp
 from numba import jit
-from greatx.nn.models.surrogate import Surrogate
-from utility.util import set_random
 from torch_geometric.data import Data
 from torch_geometric.utils import to_dense_adj
-from copy import copy
-import pandas as pd
+
+from greatx.nn.models.surrogate import Surrogate
+from utility.util import set_random
+
 
 class OrbitAttack:
-    def __init__(self, data:Data , device='cpu',seed = 720,orbit_type = 1518):
+    def __init__(self, data: Data, device="cpu", seed=720, orbit_type=1518):
         """
         Input:
             model: surrogate model
@@ -39,8 +42,9 @@ class OrbitAttack:
         self.influencer_nodes = []
         self.potential_edges = []
         self.features = data.x
-        self.adj :sp.csr_matrix = to_dense_adj(
-            data.edge_index, max_num_nodes=data.num_nodes)[0]
+        self.adj: sp.csr_matrix = to_dense_adj(
+            data.edge_index, max_num_nodes=data.num_nodes
+        )[0]
         self.labels = data.y
 
         self.cooc_constraint = None
@@ -51,19 +55,21 @@ class OrbitAttack:
         self.modified_adj = None
         self.modified_features = None
         orbit_dict = pd.read_csv(f"data/orbit/{data.name}_orbit_table.csv")
-        self.matching_index = orbit_dict.index[orbit_dict["two_Orbit_type"] == orbit_type].tolist()
+        self.matching_index = orbit_dict.index[
+            orbit_dict["two_Orbit_type"] == orbit_type
+        ].tolist()
 
-    
-
-    def setup_surrogate(self,model):
+    def setup_surrogate(self, model):
         self.surrogate = model
         Surrogate.setup_surrogate(self, surrogate=self.surrogate, freeze=True)
         W = None
         for para in self.surrogate.parameters():
             if para.ndim == 1:
-                warnings.warn("The surrogate model has `bias` term, "
-                              "which is ignored and the model itself "
-                              f"may not be a perfect choice for.")
+                warnings.warn(
+                    "The surrogate model has `bias` term, "
+                    "which is ignored and the model itself "
+                    f"may not be a perfect choice for."
+                )
                 continue
             if W is None:
                 W = para
@@ -86,7 +92,7 @@ class OrbitAttack:
             para.requires_grad_(False)
         return self
 
-    def set_max_perturbations(self,budget):
+    def set_max_perturbations(self, budget):
         self.n_perturbations = budget
 
         self.modified_adj = None
@@ -97,8 +103,6 @@ class OrbitAttack:
         self.influencer_nodes = []
         self.potential_edges = []
 
-    
-
     def filter_potential_singletons(self, modified_adj):
         """Computes a mask for entries potentially leading to singleton nodes, i.e.
         one of the two nodes corresponding to the entry have degree 1 and there
@@ -106,7 +110,7 @@ class OrbitAttack:
         """
 
         degrees = modified_adj.sum(0)
-        degree_one = (degrees == 1)
+        degree_one = degrees == 1
         resh = degree_one.repeat(self.nnodes, 1).float()
         l_and = resh * modified_adj
         logical_and_symmetric = l_and + l_and.t()
@@ -118,7 +122,16 @@ class OrbitAttack:
         W = surrogate.gc1.weight @ surrogate.gc2.weight
         return W.detach().cpu().numpy()
 
-    def attack(self, target,num_budgets=None,attack_structure =True,attack_features=False, direct=True, verbose=False, **kwargs):
+    def attack(
+        self,
+        target,
+        num_budgets=None,
+        attack_structure=True,
+        attack_features=False,
+        direct=True,
+        verbose=False,
+        **kwargs,
+    ):
         """Generate perturbations on the input graph.
 
         Parameters
@@ -166,16 +179,17 @@ class OrbitAttack:
             self.ori_features = self.features.tolil()
             self.modified_features = self.features.tolil()
 
-
         assert self.n_perturbations > 0, "need at least one perturbation"
 
         self.adj_norm = utils.normalize_adj(self.modified_adj)
 
-        logits = (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W )[target]
+        logits = (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W)[
+            target
+        ]
 
         self.label_u = self.labels[target]
         label_target_onehot = np.eye(int(self.nclass))[self.labels[target]]
-        best_wrong_class = (logits - 1000*label_target_onehot).argmax()
+        best_wrong_class = (logits - 1000 * label_target_onehot).argmax()
         surrogate_losses = [logits[self.labels[target]] - logits[best_wrong_class]]
 
         if verbose:
@@ -183,29 +197,33 @@ class OrbitAttack:
             print("##### Attack only using structure perturbations #####")
             print("##### Performing {} perturbations #####".format(num_budgets))
 
-
-        self.potential_edges = (np.array([[target, value] for value in self.matching_index])).astype("int32")
-
+        self.potential_edges = (
+            np.array([[target, value] for value in self.matching_index])
+        ).astype("int32")
 
         for _ in range(num_budgets):
             if verbose:
-                print("##### ...{}/{} perturbations ... #####".format(_+1, num_budgets))
+                print(
+                    "##### ...{}/{} perturbations ... #####".format(_ + 1, num_budgets)
+                )
 
-
-            filtered_edges_final =  self.potential_edges
+            filtered_edges_final = self.potential_edges
 
             # Compute new entries in A_hat_square_uv
             a_hat_uv_new = self.compute_new_a_hat_uv(filtered_edges_final, target)
             # Compute the struct scores for each potential edge
-            struct_scores = self.struct_score(a_hat_uv_new, self.modified_features @ self.W)
+            struct_scores = self.struct_score(
+                a_hat_uv_new, self.modified_features @ self.W
+            )
 
             best_edge_ix = struct_scores.argmin()
             best_edge_score = struct_scores.min()
             best_edge = filtered_edges_final[best_edge_ix]
 
-
             # perform edge perturbation
-            self.modified_adj[tuple(best_edge)] = self.modified_adj[tuple(best_edge[::-1])] = 1 - self.modified_adj[tuple(best_edge)]
+            self.modified_adj[tuple(best_edge)] = self.modified_adj[
+                tuple(best_edge[::-1])
+            ] = (1 - self.modified_adj[tuple(best_edge)])
             self.adj_norm = utils.normalize_adj(self.modified_adj)
 
             self.structure_perturbations.append(tuple(best_edge))
@@ -214,15 +232,19 @@ class OrbitAttack:
 
         # return self.modified_adj, self.modified_features
 
-    def get_attacker_nodes(self, n=5, add_additional_nodes = False):
+    def get_attacker_nodes(self, n=5, add_additional_nodes=False):
         """Determine the influencer nodes to attack node i based on
         the weights W and the attributes X.
         """
-        assert n < self.nnodes-1, "number of influencers cannot be >= number of nodes in the graph!"
+        assert (
+            n < self.nnodes - 1
+        ), "number of influencers cannot be >= number of nodes in the graph!"
         neighbors = self.ori_adj[self.target_node].nonzero()[1]
         assert self.target_node not in neighbors
 
-        potential_edges = np.column_stack((np.tile(self.target_node, len(neighbors)),neighbors)).astype("int32")
+        potential_edges = np.column_stack(
+            (np.tile(self.target_node, len(neighbors)), neighbors)
+        ).astype("int32")
 
         # The new A_hat_square_uv values that we would get if we removed the edge from u to each of the neighbors, respectively
         a_hat_uv = self.compute_new_a_hat_uv(potential_edges, self.target_node)
@@ -232,7 +254,9 @@ class OrbitAttack:
 
         # compute the struct scores for all neighbors
         struct_scores = self.struct_score(a_hat_uv, XW)
-        if len(neighbors) >= n:  # do we have enough neighbors for the number of desired influencers?
+        if (
+            len(neighbors) >= n
+        ):  # do we have enough neighbors for the number of desired influencers?
             influencer_nodes = neighbors[np.argsort(struct_scores)[:n]]
             if add_additional_nodes:
                 return influencer_nodes, np.array([])
@@ -240,40 +264,51 @@ class OrbitAttack:
         else:
 
             influencer_nodes = neighbors
-            if add_additional_nodes:  # Add additional influencers by connecting them to u first.
+            if (
+                add_additional_nodes
+            ):  # Add additional influencers by connecting them to u first.
                 # Compute the set of possible additional influencers, i.e. all nodes except the ones
                 # that are already connected to u.
-                poss_add_infl = np.setdiff1d(np.setdiff1d(np.arange(self.nnodes),neighbors), self.target_node)
+                poss_add_infl = np.setdiff1d(
+                    np.setdiff1d(np.arange(self.nnodes), neighbors), self.target_node
+                )
                 n_possible_additional = len(poss_add_infl)
-                n_additional_attackers = n-len(neighbors)
-                possible_edges = np.column_stack((np.tile(self.target_node, n_possible_additional), poss_add_infl))
+                n_additional_attackers = n - len(neighbors)
+                possible_edges = np.column_stack(
+                    (np.tile(self.target_node, n_possible_additional), poss_add_infl)
+                )
 
                 # Compute the struct_scores for all possible additional influencers, and choose the one
                 # with the best struct score.
-                a_hat_uv_additional = self.compute_new_a_hat_uv(possible_edges, self.target_node)
+                a_hat_uv_additional = self.compute_new_a_hat_uv(
+                    possible_edges, self.target_node
+                )
                 additional_struct_scores = self.struct_score(a_hat_uv_additional, XW)
-                additional_influencers = poss_add_infl[np.argsort(additional_struct_scores)[-n_additional_attackers::]]
+                additional_influencers = poss_add_infl[
+                    np.argsort(additional_struct_scores)[-n_additional_attackers::]
+                ]
 
                 return influencer_nodes, additional_influencers
             else:
                 return influencer_nodes
 
     def compute_logits(self):
-        return (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W)[self.target_node]
+        return (self.adj_norm @ self.adj_norm @ self.modified_features @ self.W)[
+            self.target_node
+        ]
 
     def strongest_wrong_class(self, logits):
         label_u_onehot = np.eye(self.nclass)[self.label_u]
-        return (logits - 1000*label_u_onehot).argmax()
-
-
+        return (logits - 1000 * label_u_onehot).argmax()
 
     def gradient_wrt_x(self, label):
         # return self.adj_norm.dot(self.adj_norm)[self.target_node].T.dot(self.W[:, label].T)
-        return self.adj_norm.dot(self.adj_norm)[self.target_node].T.dot(self.W[:, label].reshape(1, -1))
+        return self.adj_norm.dot(self.adj_norm)[self.target_node].T.dot(
+            self.W[:, label].reshape(1, -1)
+        )
 
     def reset(self):
-        """Reset Nettack
-        """
+        """Reset Nettack"""
         self.modified_adj = None
         self.modified_features = None
         self.cooc_constraint = None
@@ -281,7 +316,6 @@ class OrbitAttack:
         self.feature_perturbations = []
         self.influencer_nodes = []
         self.potential_edges = []
-
 
     def struct_score(self, a_hat_uv, XW):
         """
@@ -304,7 +338,7 @@ class OrbitAttack:
         logits = a_hat_uv.dot(XW)
         label_onehot = np.eye(XW.shape[1])[self.label_u]
         best_wrong_class_logits = (logits - 1000 * label_onehot).max(1)
-        logits_for_correct_class = logits[:,self.label_u]
+        logits_for_correct_class = logits[:, self.label_u]
         struct_scores = logits_for_correct_class - best_wrong_class_logits
 
         return struct_scores
@@ -332,10 +366,21 @@ class OrbitAttack:
         twohop_ixs = np.array(A_hat_sq.nonzero()).T
         degrees = self.modified_adj.sum(0).A1 + 1
 
-        ixs, vals = compute_new_a_hat_uv(edges, node_ixs, edges_set, twohop_ixs, values_before, degrees,
-                                         potential_edges.astype(np.int32), target_node)
+        ixs, vals = compute_new_a_hat_uv(
+            edges,
+            node_ixs,
+            edges_set,
+            twohop_ixs,
+            values_before,
+            degrees,
+            potential_edges.astype(np.int32),
+            target_node,
+        )
         ixs_arr = np.array(ixs)
-        a_hat_uv = sp.coo_matrix((vals, (ixs_arr[:, 0], ixs_arr[:, 1])), shape=[len(potential_edges), self.nnodes])
+        a_hat_uv = sp.coo_matrix(
+            (vals, (ixs_arr[:, 0], ixs_arr[:, 1])),
+            shape=[len(potential_edges), self.nnodes],
+        )
 
         return a_hat_uv
 
@@ -401,9 +446,11 @@ class OrbitAttack:
         data.edge_index = edge_list
 
         if self.attack_features:
-            data.x = torch.tensor(self.modified_features,dtype=torch.float)
+            data.x = torch.tensor(self.modified_features, dtype=torch.float)
 
         return data
+
+
 @jit(nopython=True)
 def connected_after(u, v, connected_before, delta):
     if u == v:
@@ -416,7 +463,16 @@ def connected_after(u, v, connected_before, delta):
 
 
 @jit(nopython=True)
-def compute_new_a_hat_uv(edge_ixs, node_nb_ixs, edges_set, twohop_ixs, values_before, degs, potential_edges, u):
+def compute_new_a_hat_uv(
+    edge_ixs,
+    node_nb_ixs,
+    edges_set,
+    twohop_ixs,
+    values_before,
+    degs,
+    potential_edges,
+    u,
+):
     """
     Compute the new values [A_hat_square]_u for every potential edge, where u is the target node. C.f. Theorem 5.1
     equation 17.
@@ -424,13 +480,12 @@ def compute_new_a_hat_uv(edge_ixs, node_nb_ixs, edges_set, twohop_ixs, values_be
     """
     N = degs.shape[0]
 
-    twohop_u= twohop_ixs[twohop_ixs[:, 0] == u, 1]
+    twohop_u = twohop_ixs[twohop_ixs[:, 0] == u, 1]
 
+    # result_array = potential_edges[:, 1]
 
-    #result_array = potential_edges[:, 1]
-
-    #twohop_u = np.array([i for i in range(0, 2110)])
-    #np.union1d(result_array, twohop_u_1)
+    # twohop_u = np.array([i for i in range(0, 2110)])
+    # np.union1d(result_array, twohop_u_1)
 
     nbs_u = edge_ixs[edge_ixs[:, 0] == u, 1]
     nbs_u_set = set(nbs_u)
@@ -481,11 +536,20 @@ def compute_new_a_hat_uv(edge_ixs, node_nb_ixs, edges_set, twohop_ixs, values_be
 
             mult_term = 1 / np.sqrt(degs_new[u] * degs_new[v])
 
-            sum_term1 = np.sqrt(degs[u] * degs[v]) * values_before[v] - a_uv_before_sl / degs[u] - a_uv_before / \
-                        degs[v]
+            sum_term1 = (
+                np.sqrt(degs[u] * degs[v]) * values_before[v]
+                - a_uv_before_sl / degs[u]
+                - a_uv_before / degs[v]
+            )
             sum_term2 = a_uv_after / degs_new[v] + a_uv_after_sl / degs_new[u]
-            sum_term3 = -((a_um and a_vm_before) / degs[edge[0]]) + (a_um_after and a_vm_after) / degs_new[edge[0]]
-            sum_term4 = -((a_un and a_vn_before) / degs[edge[1]]) + (a_un_after and a_vn_after) / degs_new[edge[1]]
+            sum_term3 = (
+                -((a_um and a_vm_before) / degs[edge[0]])
+                + (a_um_after and a_vm_after) / degs_new[edge[0]]
+            )
+            sum_term4 = (
+                -((a_un and a_vn_before) / degs[edge[1]])
+                + (a_un_after and a_vn_after) / degs_new[edge[1]]
+            )
             new_val = mult_term * (sum_term1 + sum_term2 + sum_term3 + sum_term4)
 
             return_ixs.append((ix, v))
@@ -493,22 +557,23 @@ def compute_new_a_hat_uv(edge_ixs, node_nb_ixs, edges_set, twohop_ixs, values_be
 
     return return_ixs, return_values
 
+
 def filter_singletons(edges, adj):
     """
     Filter edges that, if removed, would turn one or more nodes into singleton nodes.
     """
 
-
-    degs = np.squeeze(np.array(np.sum(adj,0)))
+    degs = np.squeeze(np.array(np.sum(adj, 0)))
     existing_edges = np.squeeze(np.array(adj.tocsr()[tuple(edges.T)]))
     if existing_edges.size > 0:
-        edge_degrees = degs[np.array(edges)] + 2*(1-existing_edges[:,None]) - 1
+        edge_degrees = degs[np.array(edges)] + 2 * (1 - existing_edges[:, None]) - 1
     else:
         edge_degrees = degs[np.array(edges)] + 1
 
     zeros = edge_degrees == 0
     zeros_sum = zeros.sum(1)
     return zeros_sum == 0
+
 
 def compute_alpha(n, S_d, d_min):
     """
@@ -531,7 +596,11 @@ def update_Sx(S_old, n_old, d_old, d_new, d_min):
     d_old_in_range = np.multiply(d_old, old_in_range)
     d_new_in_range = np.multiply(d_new, new_in_range)
 
-    new_S_d = S_old - np.log(np.maximum(d_old_in_range, 1)).sum(1) + np.log(np.maximum(d_new_in_range, 1)).sum(1)
+    new_S_d = (
+        S_old
+        - np.log(np.maximum(d_old_in_range, 1)).sum(1)
+        + np.log(np.maximum(d_new_in_range, 1)).sum(1)
+    )
     new_n = n_old - np.sum(old_in_range, 1) + np.sum(new_in_range, 1)
 
     return new_S_d, new_n
@@ -544,6 +613,7 @@ def compute_log_likelihood(n, alpha, S_d, d_min):
     """
 
     return n * np.log(alpha) + n * alpha * np.log(d_min) - (alpha + 1) * S_d
+
 
 def filter_chisquare(ll_ratios, cutoff):
     return ll_ratios < cutoff

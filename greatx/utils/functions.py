@@ -7,11 +7,11 @@ from typing import Any, Callable, Optional
 
 import numpy as np
 
-topk_values_indices = namedtuple('topk_values_indices', ['values', 'indices'])
+topk_values_indices = namedtuple("topk_values_indices", ["values", "indices"])
 
 
 def topk(array: np.ndarray, k: int, largest: bool = True) -> topk_values_indices:
-    """Returns the k largest/smallest elements and corresponding indices 
+    """Returns the k largest/smallest elements and corresponding indices
     from an array-like input.
 
     Parameters
@@ -19,14 +19,14 @@ def topk(array: np.ndarray, k: int, largest: bool = True) -> topk_values_indices
     array : np.ndarray or list
         the array-like input
     k : int
-        the k in "top-k" 
+        the k in "top-k"
     largest : bool, optional
-        controls whether to return largest or smallest elements        
+        controls whether to return largest or smallest elements
 
     Returns
     -------
     namedtuple[values, indices]
-        Returns the :attr:`k` largest/smallest elements and corresponding indices 
+        Returns the :attr:`k` largest/smallest elements and corresponding indices
         of the given :attr:`array`
 
     Example
@@ -57,7 +57,7 @@ def topk(array: np.ndarray, k: int, largest: bool = True) -> topk_values_indices
     values = flat[indices]
     indices = np.unravel_index(indices, array.shape)
     if len(indices) == 1:
-        indices, = indices
+        (indices,) = indices
     return topk_values_indices(values=values, indices=indices)
 
 
@@ -120,11 +120,11 @@ def get_length(obj: Any) -> int:
 
 
 def wrapper(func: Callable) -> Callable:
-    """Wrap a function to make some arguments 
+    """Wrap a function to make some arguments
     have the same length. By default, the arguments
-    to be modified are `hids` and `acts`. 
+    to be modified are `hids` and `acts`.
 
-    Uses can custom these arguments by setting argument 
+    Uses can custom these arguments by setting argument
 
     * `includes` : to includes custom arguments
     * `excludes` : to excludes custom arguments
@@ -165,7 +165,7 @@ def wrapper(func: Callable) -> Callable:
 
     >>> @wrapper
     ... def func(self, hids=[16], acts=None):
-    ...     print(locals())    
+    ...     print(locals())
 
     >>> func()
     TypeError: The decorated function 'func' missing required argument 'self'.
@@ -179,7 +179,7 @@ def wrapper(func: Callable) -> Callable:
 
     >>> @wrapper
     ... def func(self, hids=[16], acts=None, heads=8):
-    ...     print(locals())    
+    ...     print(locals())
 
     >>> func('class_itself', hids=[100, 200])
     {'self': 'class_itself', 'hids': [100, 200], 'acts': [None, None], 'heads': 8}
@@ -213,7 +213,8 @@ def wrapper(func: Callable) -> Callable:
 
                 if i >= max_length:
                     raise TypeError(
-                        f"The decorated function '{func.__name__}' missing required argument '{p.name}'.")
+                        f"The decorated function '{func.__name__}' missing required argument '{p.name}'."
+                    )
             else:
                 paras[p.name] = p.default
         paras.update(kwargs)
@@ -226,7 +227,7 @@ def wrapper(func: Callable) -> Callable:
         assert isinstance(excludes, list)
         assert isinstance(length_as, str)
 
-        accepted_vars = includes + ['hids', 'acts']
+        accepted_vars = includes + ["hids", "acts"]
         accepted_vars = list(set(accepted_vars) - set(excludes))
 
         assert length_as in accepted_vars
@@ -237,9 +238,9 @@ def wrapper(func: Callable) -> Callable:
                 val = paras[var]
                 paras[var] = repeat(val, repeated)
 
-        paras.pop('includes', None)
-        paras.pop('excludes', None)
-        paras.pop('length_as', None)
+        paras.pop("includes", None)
+        paras.pop("excludes", None)
+        paras.pop("length_as", None)
 
         return func(**paras)
 
