@@ -51,11 +51,19 @@ class DAGNN(nn.Module):
     :class:`greatx.nn.layers.DAGNNConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [64], acts: List[str] = ['relu'],
-                 dropout: float = 0.5, K: int = 10, bn: bool = False,
-                 bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [64],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        K: int = 10,
+        bn: bool = False,
+        bias: bool = True,
+    ):
 
         super().__init__()
         assert len(hids) > 0

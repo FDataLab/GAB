@@ -1,13 +1,14 @@
-from typing import Optional, List
-from torch_geometric.data import Data
+from typing import List, Optional
 
 import torch
+from torch_geometric.data import Data
 
 """
 Provides the interface for models training supervisor
 =======
 July 08 2024
 """
+
 
 class IModelSupervisor:
     """
@@ -24,21 +25,21 @@ class IModelSupervisor:
           optionally using precomputed predictions
     """
 
-    def train_model(self,idx_train : List, idx_val : List,idx_test : List,log_interval : int = 10):
+    def train_model(
+        self, idx_train: List, idx_val: List, idx_test: List, log_interval: int = 10
+    ):
         pass
 
-    def get_model_output(self,data:Data):
-        pass
-    
-    def get_model_prediction(self,data:Data):
+    def get_model_output(self, data: Data):
         pass
 
-    def to_device(device : str):
-        pass
-    
-    def get_prediction_accuracy(self,mask,data:Data,prediction:Optional[torch.tensor] = None):
+    def get_model_prediction(self, data: Data):
         pass
 
-    
+    def to_device(device: str):
+        pass
 
-
+    def get_prediction_accuracy(
+        self, mask, data: Data, prediction: Optional[torch.tensor] = None
+    ):
+        pass

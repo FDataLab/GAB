@@ -1,24 +1,26 @@
-
 """
 Script implementation of the GCORN model.
 """
+
+import numpy as np
+import scipy.sparse as sp
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.utils import add_self_loops, degree, to_dense_adj
-import scipy.sparse as sp
 from torch.nn import Parameter
-import numpy as np
+from torch_geometric.utils import add_self_loops, degree, to_dense_adj
+
 from .matrix_ortho import *
+
 
 def normalize_tensor_adj(adj):
     device = adj.device
     adj = sp.coo_matrix(adj.cpu())
     rowsum = np.array(adj.sum(1))
     d_inv_sqrt = np.power(rowsum, -0.5).flatten()
-    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
+    d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.0
     d_mat_inv_sqrt = sp.diags(d_inv_sqrt)
-    coo=  adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
+    coo = adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt).tocoo()
     values = coo.data
     indices = np.vstack((coo.row, coo.col))
 
@@ -27,7 +29,6 @@ def normalize_tensor_adj(adj):
     shape = coo.shape
 
     return torch.sparse.FloatTensor(i, v, torch.Size(shape)).to_dense().to(device)
-
 
 
 class ConvClass(nn.Module):
@@ -42,8 +43,15 @@ class ConvClass(nn.Module):
         order_val (int) : The order of the projection
     """
 
-    def __init__(self, input_dim , output_dim, activation, beta_val=0.5,
-                iteration_val=25, order_val=2):
+    def __init__(
+        self,
+        input_dim,
+        output_dim,
+        activation,
+        beta_val=0.5,
+        iteration_val=25,
+        order_val=2,
+    ):
         super(ConvClass, self).__init__()
 
         self.input_dim = input_dim
@@ -61,17 +69,19 @@ class ConvClass(nn.Module):
 
     def forward(self, x, adj):
         scaling = scale_values(self.weight.data).to(x.device)
-        ortho_w = orthonormalize_weights(self.weight.t() / scaling,
-                                        beta = self.beta_val,
-                                        iters = self.iters,
-                                        order = self.order).t()
+        ortho_w = orthonormalize_weights(
+            self.weight.t() / scaling,
+            beta=self.beta_val,
+            iters=self.iters,
+            order=self.order,
+        ).t()
 
         x = F.linear(x, ortho_w)
 
-        return self.activation(torch.mm(adj,x))
+        return self.activation(torch.mm(adj, x))
 
     def reset_parameters(self):
-        stdv = 1. / np.sqrt(self.weight.size(1))
+        stdv = 1.0 / np.sqrt(self.weight.size(1))
         nn.init.orthogonal_(self.weight, gain=stdv)
 
 
@@ -100,20 +110,26 @@ class GCORN(torch.nn.Module):
     out_channels (int) : The output dimension (the number of classes to predict)
     """
 
-    def __init__(self, in_channels, hidden_channels, nlayers,out_channels,drop_out = 0.5):
+    def __init__(
+        self, in_channels, hidden_channels, nlayers, out_channels, drop_out=0.5
+    ):
         super().__init__()
 
         self.activation = nn.ReLU()
         self.drop_out = drop_out
         self.convs = []
-        self.convs.append(ConvClass(in_channels, hidden_channels,activation = self.activation))
+        self.convs.append(
+            ConvClass(in_channels, hidden_channels, activation=self.activation)
+        )
 
-        for _ in range(1,nlayers):
-            self.convs.append(ConvClass(hidden_channels, hidden_channels,activation = self.activation))
+        for _ in range(1, nlayers):
+            self.convs.append(
+                ConvClass(hidden_channels, hidden_channels, activation=self.activation)
+            )
 
         self.lin = MLPClassifier(hidden_channels, out_channels, self.activation)
 
-    def to(self,device):
+    def to(self, device):
         self.lin.to(device)
         for conv in self.convs:
             conv.to(device)
@@ -121,7 +137,7 @@ class GCORN(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_weight=None):
 
-        adj_true = to_dense_adj(edge_index)[0, :,:]
+        adj_true = to_dense_adj(edge_index)[0, :, :]
 
         norm_adj = normalize_tensor_adj(adj_true)
         for conv in self.convs:

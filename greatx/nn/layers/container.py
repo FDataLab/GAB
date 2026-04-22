@@ -9,7 +9,7 @@ class Sequential(nn.Sequential):
     Parameters
     ----------
     loc : int, optional
-        the location of feature input :obj:`x`, by default 0    
+        the location of feature input :obj:`x`, by default 0
 
     Example
     -------
@@ -46,13 +46,13 @@ class Sequential(nn.Sequential):
         [ 0.4909, -1.2430, -0.6029,  0.0510,  0.2107],
         [ 0.6338, -0.2760, -0.9112, -0.3197,  0.2689],
         [ 0.4909, -1.2430, -0.6029,  0.0510,  0.2107],
-        [ 0.3876, -0.6385, -0.5521, -0.2753,  0.6713]], grad_fn=<AddBackward0>)    
+        [ 0.3876, -0.6385, -0.5521, -0.2753,  0.6713]], grad_fn=<AddBackward0>)
 
     >>> # which is equivalent to:
     >>> h1 = dropout1(x)
     >>> h2 = conv1(x, edge_index, edge_weight=torch.ones(20))
     >>> h3 = dropout2(h2)
-    >>> h4 = conv2(x, edge_index, edge_weight=torch.ones(20))  
+    >>> h4 = conv2(x, edge_index, edge_weight=torch.ones(20))
 
     Note
     ----
@@ -84,10 +84,10 @@ class Sequential(nn.Sequential):
                     output = module(input)
             else:
                 output = module(*inputs, **kwargs)
-            inputs = inputs[:loc] + (output,) + inputs[loc + 1:]
+            inputs = inputs[:loc] + (output,) + inputs[loc + 1 :]
         return output
 
     def reset_parameters(self):
         for layer in self:
-            if hasattr(layer, 'reset_parameters'):
+            if hasattr(layer, "reset_parameters"):
                 layer.reset_parameters()

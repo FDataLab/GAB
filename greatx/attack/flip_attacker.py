@@ -38,6 +38,7 @@ class FlipAttacker(Attacker):
     :class:`greatx.attack.FlipAttacker` is a base class
     for graph modification attacks (GMA).
     """
+
     def reset(self) -> "FlipAttacker":
         """Reset attacker. This method must be called before attack."""
         super().reset()
@@ -74,7 +75,9 @@ class FlipAttacker(Attacker):
                     "If the behavior is not intended, "
                     "please make sure you have set "
                     "`attacker.set_allow_singleton(False)` "
-                    "or check your algorithm.", UserWarning)
+                    "or check your algorithm.",
+                    UserWarning,
+                )
 
         self._removed_edges[(u, v)] = it
         self.degree[u] -= 1
@@ -98,8 +101,7 @@ class FlipAttacker(Attacker):
         self.degree[v] += 1
 
     def removed_edges(self) -> Optional[Tensor]:
-        """Get all the edges to be removed.
-        """
+        """Get all the edges to be removed."""
         edges = self._removed_edges
         if edges is None or len(edges) == 0:
             return None
@@ -110,8 +112,7 @@ class FlipAttacker(Attacker):
         if isinstance(edges, dict):
             edges = list(edges.keys())
 
-        removed = torch.tensor(
-            np.asarray(edges, dtype="int64").T, device=self.device)
+        removed = torch.tensor(np.asarray(edges, dtype="int64").T, device=self.device)
         return removed
 
     def added_edges(self) -> Optional[Tensor]:
@@ -126,8 +127,7 @@ class FlipAttacker(Attacker):
         if isinstance(edges, dict):
             edges = list(edges.keys())
 
-        return torch.tensor(
-            np.asarray(edges, dtype="int64").T, device=self.device)
+        return torch.tensor(np.asarray(edges, dtype="int64").T, device=self.device)
 
     def edge_flips(self, frac: float = 1.0) -> BunchDict:
         """Get all the edges to be flipped, including edges
@@ -153,11 +153,11 @@ class FlipAttacker(Attacker):
         assert 0 <= frac <= 1
         added = self.added_edges()
         if added is not None:
-            added = added[:, :round(added.size(1) * frac)]
+            added = added[:, : round(added.size(1) * frac)]
 
         removed = self.removed_edges()
         if removed is not None:
-            removed = removed[:, :round(removed.size(1) * frac)]
+            removed = removed[:, : round(removed.size(1) * frac)]
 
         _all = cat(added, removed, dim=1)
         return BunchDict(added=added, removed=removed, all=_all)
@@ -207,8 +207,7 @@ class FlipAttacker(Attacker):
         if torch.is_tensor(feats):
             return feats.to(self.device)
 
-        return torch.tensor(
-            np.asarray(feats, dtype="int64").T, device=self.device)
+        return torch.tensor(np.asarray(feats, dtype="int64").T, device=self.device)
 
     def added_feats(self) -> Optional[Tensor]:
         """Get all the features to be added."""
@@ -222,8 +221,7 @@ class FlipAttacker(Attacker):
         if torch.is_tensor(feats):
             return feats.to(self.device)
 
-        return torch.tensor(
-            np.asarray(feats, dtype="int64").T, device=self.device)
+        return torch.tensor(np.asarray(feats, dtype="int64").T, device=self.device)
 
     def feat_flips(self, frac: float = 1.0) -> BunchDict:
         """Get all the features to be flipped, including features
@@ -250,11 +248,11 @@ class FlipAttacker(Attacker):
 
         added = self.added_feats()
         if added is not None:
-            added = added[:, :round(added.size(1) * frac)]
+            added = added[:, : round(added.size(1) * frac)]
 
         removed = self.removed_feats()
         if removed is not None:
-            removed = removed[:, :round(removed.size(1) * frac)]
+            removed = removed[:, : round(removed.size(1) * frac)]
 
         _all = cat(added, removed, dim=1)
         return BunchDict(added=added, removed=removed, all=_all)
@@ -313,18 +311,19 @@ class FlipAttacker(Attacker):
         data = copy(self.ori_data)
         edge_index = data.edge_index
         edge_weight = data.edge_weight
-        assert edge_weight is None, 'weighted graph is not supported now.'
+        assert edge_weight is None, "weighted graph is not supported now."
 
         edge_flips = self.edge_flips(frac=edge_ratio)
-        removed = edge_flips['removed']
+        removed = edge_flips["removed"]
 
         if removed is not None:
             edge_index = remove_edges(edge_index, removed, symmetric=symmetric)
 
-        added = edge_flips['added']
+        added = edge_flips["added"]
         if added is not None:
-            edge_index = add_edges(edge_index, added, symmetric=symmetric,
-                                   coalesce=coalesce)
+            edge_index = add_edges(
+                edge_index, added, symmetric=symmetric, coalesce=coalesce
+            )
 
         data.edge_index = edge_index
 
@@ -334,13 +333,13 @@ class FlipAttacker(Attacker):
         if self.feature_attack:
             feat = self.feat.detach().clone()
             feat_flips = self.feat_flips(frac=feat_ratio)
-            removed = feat_flips['removed']
+            removed = feat_flips["removed"]
             if removed is not None:
-                feat[removed[0], removed[1]] = 0.
+                feat[removed[0], removed[1]] = 0.0
 
-            added = feat_flips['added']
+            added = feat_flips["added"]
             if added is not None:
-                feat[added[0], added[1]] = 1.
+                feat[added[0], added[1]] = 1.0
             data.x = feat
 
         return data
@@ -383,8 +382,9 @@ class FlipAttacker(Attacker):
         threshold = 1
         # threshold = 2 if the graph has selfloop before
         # otherwise threshold = 1
-        if not self._allow_singleton and (self.degree[u] <= threshold
-                                          or self.degree[v] <= threshold):
+        if not self._allow_singleton and (
+            self.degree[u] <= threshold or self.degree[v] <= threshold
+        ):
             return True
         return False
 
@@ -409,9 +409,15 @@ class FlipAttacker(Attacker):
         _removed_edges = self._removed_edges
         _added_edges = self._added_edges
 
-        return all((u != v, (u, v) not in _removed_edges, (v, u)
-                    not in _removed_edges, (u, v) not in _added_edges, (v, u)
-                    not in _added_edges))
+        return all(
+            (
+                u != v,
+                (u, v) not in _removed_edges,
+                (v, u) not in _removed_edges,
+                (u, v) not in _added_edges,
+                (v, u) not in _added_edges,
+            )
+        )
 
 
 def cat(a, b, dim=1):

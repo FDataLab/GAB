@@ -8,24 +8,30 @@ import numba
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.utils.checkpoint import checkpoint
-from torch.utils.cpp_extension import load
 import torch_scatter
 import torch_sparse
+from torch.utils.checkpoint import checkpoint
+from torch.utils.cpp_extension import load
+
 try:
     try:
         import kernels as custom_cuda_kernels
-        if not hasattr(custom_cuda_kernels, 'topk'):
+
+        if not hasattr(custom_cuda_kernels, "topk"):
             raise ImportError()
     except ImportError:
-        cache_dir = os.path.join('.', 'extension', socket.gethostname(), torch.__version__)
+        cache_dir = os.path.join(
+            ".", "extension", socket.gethostname(), torch.__version__
+        )
         os.makedirs(cache_dir, exist_ok=True)
-        custom_cuda_kernels = load(name="kernels",
-                                   sources=["kernels/csrc/custom.cpp", "kernels/csrc/custom_kernel.cu"],
-                                   extra_cuda_cflags=['-lcusparse', '-l', 'cusparse'],
-                                   build_directory=cache_dir)
+        custom_cuda_kernels = load(
+            name="kernels",
+            sources=["kernels/csrc/custom.cpp", "kernels/csrc/custom_kernel.cu"],
+            extra_cuda_cflags=["-lcusparse", "-l", "cusparse"],
+            build_directory=cache_dir,
+        )
 except:  # noqa: E722
-    logging.warn('Cuda kernels could not loaded -> no CUDA support!')
+    logging.warn("Cuda kernels could not loaded -> no CUDA support!")
 
 
 def soft_median(
@@ -65,18 +71,27 @@ def soft_median(
     weight_sums = torch_scatter.scatter_add(edge_weights, row_index)
 
     with torch.no_grad():
-        median_idx = custom_cuda_kernels.dimmedian_idx(x, edge_index, edge_weights, A.nnz(), batch_size)
-        median_col_idx = torch.arange(d, device=x.device).view(1, -1).expand(batch_size, d)
+        median_idx = custom_cuda_kernels.dimmedian_idx(
+            x, edge_index, edge_weights, A.nnz(), batch_size
+        )
+        median_col_idx = (
+            torch.arange(d, device=x.device).view(1, -1).expand(batch_size, d)
+        )
     x_median = x[median_idx, median_col_idx]
 
-    distances = torch.norm(x_median[row_index] - x[col_index], dim=1, p=p) / pow(d, 1 / p)
+    distances = torch.norm(x_median[row_index] - x[col_index], dim=1, p=p) / pow(
+        d, 1 / p
+    )
 
-    soft_weights = torch_scatter.composite.scatter_softmax(-distances / temperature, row_index, dim=-1, eps=eps)
+    soft_weights = torch_scatter.composite.scatter_softmax(
+        -distances / temperature, row_index, dim=-1, eps=eps
+    )
     weighted_values = soft_weights * edge_weights
     row_sum_weighted_values = torch_scatter.scatter_add(weighted_values, row_index)
-    final_adj_weights = weighted_values / row_sum_weighted_values[row_index] * weight_sums[row_index]
+    final_adj_weights = (
+        weighted_values / row_sum_weighted_values[row_index] * weight_sums[row_index]
+    )
 
     new_embeddings = torch_sparse.spmm(edge_index, final_adj_weights, batch_size, n, x)
 
     return new_embeddings
-

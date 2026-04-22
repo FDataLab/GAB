@@ -51,8 +51,13 @@ class FeaturePropagation(BaseTransform):
     https://github.com/twitter-research/feature-propagation
 
     """
-    def __init__(self, missing_mask: Optional[Tensor] = None,
-                 num_iterations: int = 40, normalize: bool = True):
+
+    def __init__(
+        self,
+        missing_mask: Optional[Tensor] = None,
+        num_iterations: int = 40,
+        normalize: bool = True,
+    ):
         super().__init__()
         self.missing_mask = missing_mask
         self.num_iterations = num_iterations
@@ -76,10 +81,14 @@ class FeaturePropagation(BaseTransform):
         edge_index, edge_weight = data.edge_index, data.edge_weight
 
         if self.normalize:
-            edge_index, edge_weight = gcn_norm(edge_index, edge_weight,
-                                               x.size(0), improved=False,
-                                               add_self_loops=False,
-                                               dtype=x.dtype)
+            edge_index, edge_weight = gcn_norm(
+                edge_index,
+                edge_weight,
+                x.size(0),
+                improved=False,
+                add_self_loops=False,
+                dtype=x.dtype,
+            )
         for _ in range(self.num_iterations):
             # Diffuse current features
             out = spmm(out, edge_index, edge_weight)

@@ -2,12 +2,7 @@ from typing import List
 
 import torch.nn as nn
 
-from greatx.nn.layers import (
-    Sequential,
-    TensorGCNConv,
-    TensorLinear,
-    activations,
-)
+from greatx.nn.layers import Sequential, TensorGCNConv, TensorLinear, activations
 from greatx.utils import wrapper
 
 
@@ -51,11 +46,20 @@ class RTGCN(nn.Module):
     :class:`greatx.nn.layers.TensorGCNConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int, num_nodes: int,
-                 num_channels: int, hids: List[int] = [16],
-                 acts: List[str] = ['relu'], dropout: float = 0.5,
-                 bias: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_nodes: int,
+        num_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        bias: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
 
@@ -63,19 +67,33 @@ class RTGCN(nn.Module):
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
             conv.append(
-                TensorGCNConv(in_channels, hid, num_nodes=num_nodes,
-                              num_channels=num_channels, bias=bias))
+                TensorGCNConv(
+                    in_channels,
+                    hid,
+                    num_nodes=num_nodes,
+                    num_channels=num_channels,
+                    bias=bias,
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
             conv.append(nn.Dropout(dropout))
             in_channels = hid
         conv.append(
-            TensorGCNConv(in_channels, out_channels, num_nodes=num_nodes,
-                          num_channels=num_channels, bias=bias))
+            TensorGCNConv(
+                in_channels,
+                out_channels,
+                num_nodes=num_nodes,
+                num_channels=num_channels,
+                bias=bias,
+            )
+        )
         conv.append(
-            TensorLinear(out_channels, num_nodes=num_nodes,
-                         num_channels=num_channels, bias=bias))
+            TensorLinear(
+                out_channels, num_nodes=num_nodes, num_channels=num_channels, bias=bias
+            )
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):

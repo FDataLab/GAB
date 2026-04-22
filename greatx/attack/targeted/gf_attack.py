@@ -77,20 +77,27 @@ class GFAttack(TargetedAttacker):
     * T=128 for citeseer and pubmed, T=num_nodes//2 for cora to reproduce results in paper. # noqa
 
     """
-    def __init__(self, data: Data, K: int = 2, T: int = 128,
-                 device: str = "cpu", seed: Optional[int] = None,
-                 name: Optional[str] = None, **kwargs):
-        super().__init__(data=data, device=device, seed=seed, name=name,
-                         **kwargs)
+
+    def __init__(
+        self,
+        data: Data,
+        K: int = 2,
+        T: int = 128,
+        device: str = "cpu",
+        seed: Optional[int] = None,
+        name: Optional[str] = None,
+        **kwargs
+    ):
+        super().__init__(data=data, device=device, seed=seed, name=name, **kwargs)
 
         adj = self.adjacency_matrix
-        adj = adj + sp.eye(adj.shape[0], format='csr')
+        adj = adj + sp.eye(adj.shape[0], format="csr")
         deg = np.diag(adj.sum(1).A1)
         eig_vals, eig_vec = linalg.eigh(adj.A, deg)
-        self.eig_vals = torch.as_tensor(eig_vals, device=self.device,
-                                        dtype=torch.float32)
-        self.eig_vec = torch.as_tensor(eig_vec, device=self.device,
-                                       dtype=torch.float32)
+        self.eig_vals = torch.as_tensor(
+            eig_vals, device=self.device, dtype=torch.float32
+        )
+        self.eig_vec = torch.as_tensor(eig_vec, device=self.device, dtype=torch.float32)
 
         feat = self.feat
         # the author named this as `x_mean`, I don't understand why not `x_sum`
@@ -112,39 +119,56 @@ class GFAttack(TargetedAttacker):
         else:
             influencers = self.adjacency_matrix[target].indices
             row = np.repeat(influencers, N - 2)
-            col = np.hstack(
-                [list(nodes_set - set([infl])) for infl in influencers])
+            col = np.hstack([list(nodes_set - set([infl])) for infl in influencers])
         candidate_edges = np.stack([row, col], axis=1)
 
         if not self._allow_singleton:
-            candidate_edges = singleton_filter(candidate_edges,
-                                               self.adjacency_matrix)
+            candidate_edges = singleton_filter(candidate_edges, self.adjacency_matrix)
 
         return candidate_edges
 
-    def attack(self, target, *, num_budgets=None, direct_attack=True,
-               structure_attack=True, feature_attack=False,
-               ll_constraint=False, ll_cutoff=0.004, disable=False):
+    def attack(
+        self,
+        target,
+        *,
+        num_budgets=None,
+        direct_attack=True,
+        structure_attack=True,
+        feature_attack=False,
+        ll_constraint=False,
+        ll_cutoff=0.004,
+        disable=False
+    ):
 
-        super().attack(target, target_label=None, num_budgets=num_budgets,
-                       direct_attack=direct_attack,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            target,
+            target_label=None,
+            num_budgets=num_budgets,
+            direct_attack=direct_attack,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         candidate_edges = self.get_candidate_edges()
 
-        score = self.structure_score(self.adjacency_matrix, self.x_mean,
-                                     self.eig_vals, self.eig_vec,
-                                     candidate_edges, K=self.K, T=self.T,
-                                     method="nosum")
+        score = self.structure_score(
+            self.adjacency_matrix,
+            self.x_mean,
+            self.eig_vals,
+            self.eig_vec,
+            candidate_edges,
+            K=self.K,
+            T=self.T,
+            method="nosum",
+        )
 
         topk = torch.topk(score, k=self.num_budgets).indices.cpu()
         edges = candidate_edges[topk].reshape(-1, 2)
         edge_weights = self.adjacency_matrix[edges[:, 0], edges[:, 1]].A1
 
-        for it, edge_weight in tqdm(enumerate(edge_weights),
-                                    desc='Peturbing graph...',
-                                    disable=disable):
+        for it, edge_weight in tqdm(
+            enumerate(edge_weights), desc="Peturbing graph...", disable=disable
+        ):
             u, v = edges[it]
             if edge_weight > 0:
                 self.remove_edge(u, v, it)
@@ -153,9 +177,16 @@ class GFAttack(TargetedAttacker):
         return self
 
     @staticmethod
-    def structure_score(A: sp.csr_matrix, x_mean: Tensor, eig_vals: Tensor,
-                        eig_vec: Tensor, candidate_edges: np.ndarray, K: int,
-                        T: int, method: str = "nosum"):
+    def structure_score(
+        A: sp.csr_matrix,
+        x_mean: Tensor,
+        eig_vals: Tensor,
+        eig_vec: Tensor,
+        candidate_edges: np.ndarray,
+        K: int,
+        T: int,
+        method: str = "nosum",
+    ):
         """Calculate the score of potential edges as formulated in paper.
 
         Parameters
@@ -189,32 +220,32 @@ class GFAttack(TargetedAttacker):
             Scores for potential edges.
         """
 
-        assert method in ['sum', 'nosum']
+        assert method in ["sum", "nosum"]
 
         D_min = A.sum(1).A1.min() + 1  # `+1` for the added selfloop
         score = []
-        for (u, v) in candidate_edges:
-            eig_vals_res = (1 - 2 * A[
-                (u, v)]) * (2 * eig_vec[u] * eig_vec[v] - eig_vals *
-                            (eig_vec[u].square() + eig_vec[v].square()))
+        for u, v in candidate_edges:
+            eig_vals_res = (1 - 2 * A[(u, v)]) * (
+                2 * eig_vec[u] * eig_vec[v]
+                - eig_vals * (eig_vec[u].square() + eig_vec[v].square())
+            )
             eig_vals_res = eig_vals + eig_vals_res
 
             if method == "sum":
                 if K == 1:
-                    eig_vals_res = (eig_vals_res / K).abs().mul(1. / D_min)
+                    eig_vals_res = (eig_vals_res / K).abs().mul(1.0 / D_min)
                 else:
                     for itr in range(1, K):
                         eig_vals_res = eig_vals_res + eig_vals_res.pow(itr + 1)
-                    eig_vals_res = (eig_vals_res / K).abs().mul(1. / D_min)
+                    eig_vals_res = (eig_vals_res / K).abs().mul(1.0 / D_min)
             else:
-                eig_vals_res = (eig_vals_res + 1.).square().pow(K)
+                eig_vals_res = (eig_vals_res + 1.0).square().pow(K)
 
             # from small to large
             least_t = torch.topk(eig_vals_res, k=T, largest=False).indices
             eig_vals_k_sum = eig_vals_res[least_t].sum()
             u_k = eig_vec[:, least_t]
             u_x_mean = u_k.t() @ x_mean
-            score_u_v = eig_vals_k_sum * \
-                torch.square(torch.linalg.norm(u_x_mean))
+            score_u_v = eig_vals_k_sum * torch.square(torch.linalg.norm(u_x_mean))
             score.append(score_u_v.item())
         return torch.as_tensor(score)

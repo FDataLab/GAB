@@ -69,19 +69,28 @@ class Metattack(UntargetedAttacker, Surrogate):
     # Metattack can also conduct feature attack
     _allow_feature_attack: bool = True
 
-    def setup_surrogate(self, surrogate: torch.nn.Module,
-                        labeled_nodes: Tensor, unlabeled_nodes: Tensor,
-                        lr: float = 0.1, epochs: int = 100,
-                        momentum: float = 0.9, lambda_: float = 0., *,
-                        tau: float = 1.0):
+    def setup_surrogate(
+        self,
+        surrogate: torch.nn.Module,
+        labeled_nodes: Tensor,
+        unlabeled_nodes: Tensor,
+        lr: float = 0.1,
+        epochs: int = 100,
+        momentum: float = 0.9,
+        lambda_: float = 0.0,
+        *,
+        tau: float = 1.0
+    ):
 
-        if lambda_ not in (0., 0.5, 1.):
+        if lambda_ not in (0.0, 0.5, 1.0):
             raise ValueError(
                 "Invalid argument `lambda_`, allowed values "
-                "[0: (meta-self), 1: (meta-train), 0.5: (meta-both)].")
+                "[0: (meta-self), 1: (meta-train), 0.5: (meta-both)]."
+            )
 
-        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau,
-                                  freeze=False, required=GCN)
+        Surrogate.setup_surrogate(
+            self, surrogate=surrogate, tau=tau, freeze=False, required=GCN
+        )
 
         if labeled_nodes.dtype == torch.bool:
             labeled_nodes = labeled_nodes.nonzero().view(-1)
@@ -137,7 +146,7 @@ class Metattack(UntargetedAttacker, Surrogate):
         return self.feat + self.clip(feat_changes)
 
     def clip(self, matrix):
-        clipped_matrix = torch.clamp(matrix, -1., 1.)
+        clipped_matrix = torch.clamp(matrix, -1.0, 1.0)
         return clipped_matrix
 
     def reset_parameters(self):
@@ -171,16 +180,23 @@ class Metattack(UntargetedAttacker, Surrogate):
             ]
 
             self.weights = [
-                w - self.lr * v
-                for w, v in zip(self.weights, self.w_velocities)
+                w - self.lr * v for w, v in zip(self.weights, self.w_velocities)
             ]
 
-    def attack(self, num_budgets=0.05, *, structure_attack=True,
-               feature_attack=False, disable=False):
+    def attack(
+        self,
+        num_budgets=0.05,
+        *,
+        structure_attack=True,
+        feature_attack=False,
+        disable=False
+    ):
 
-        super().attack(num_budgets=num_budgets,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            num_budgets=num_budgets,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         if feature_attack:
             self._check_feature_matrix_binary()
@@ -195,8 +211,9 @@ class Metattack(UntargetedAttacker, Surrogate):
 
         num_nodes, num_feats = self.num_nodes, self.num_feats
 
-        for it in tqdm(range(self.num_budgets), desc='Peturbing graph...',
-                       disable=disable):
+        for it in tqdm(
+            range(self.num_budgets), desc="Peturbing graph...", disable=disable
+        ):
 
             if structure_attack:
                 modified_adj = self.get_perturbed_adj(adj_changes)
@@ -207,20 +224,17 @@ class Metattack(UntargetedAttacker, Surrogate):
             adj_norm = dense_gcn_norm(modified_adj)
             self.inner_train(adj_norm, modified_feat)
 
-            adj_grad, feat_grad = self.compute_gradients(
-                adj_norm, modified_feat)
+            adj_grad, feat_grad = self.compute_gradients(adj_norm, modified_feat)
 
             adj_grad_score = modified_adj.new_zeros(1)
             feat_grad_score = modified_feat.new_zeros(1)
 
             with torch.no_grad():
                 if structure_attack:
-                    adj_grad_score = self.structure_score(
-                        modified_adj, adj_grad)
+                    adj_grad_score = self.structure_score(modified_adj, adj_grad)
 
                 if feature_attack:
-                    feat_grad_score = self.feature_score(
-                        modified_feat, feat_grad)
+                    feat_grad_score = self.feature_score(modified_feat, feat_grad)
 
                 adj_max, adj_argmax = torch.max(adj_grad_score, dim=0)
                 feat_max, feat_argmax = torch.max(feat_grad_score, dim=0)
@@ -266,16 +280,14 @@ class Metattack(UntargetedAttacker, Surrogate):
 
         if self.lambda_ == 1:
             loss = F.cross_entropy(logit[self.labeled_nodes], self.y_train)
-        elif self.lambda_ == 0.:
-            loss = F.cross_entropy(logit[self.unlabeled_nodes],
-                                   self.y_self_train)
+        elif self.lambda_ == 0.0:
+            loss = F.cross_entropy(logit[self.unlabeled_nodes], self.y_self_train)
         else:
-            loss_labeled = F.cross_entropy(logit[self.labeled_nodes],
-                                           self.y_train)
-            loss_unlabeled = F.cross_entropy(logit[self.unlabeled_nodes],
-                                             self.y_self_train)
-            loss = self.lambda_ * loss_labeled + \
-                (1 - self.lambda_) * loss_unlabeled
+            loss_labeled = F.cross_entropy(logit[self.labeled_nodes], self.y_train)
+            loss_unlabeled = F.cross_entropy(
+                logit[self.unlabeled_nodes], self.y_self_train
+            )
+            loss = self.lambda_ * loss_labeled + (1 - self.lambda_) * loss_unlabeled
 
         if self.structure_attack and self.feature_attack:
             return grad(loss, [self.adj_changes, self.feat_changes])

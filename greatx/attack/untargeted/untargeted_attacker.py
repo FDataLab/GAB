@@ -28,6 +28,7 @@ class UntargetedAttacker(FlipAttacker):
     :class:`greatx.attack.FlipAttacker`.
     It belongs to graph modification attack (GMA).
     """
+
     def reset(self) -> "UntargetedAttacker":
         """Reset the state of the Attacker
 
@@ -42,8 +43,9 @@ class UntargetedAttacker(FlipAttacker):
         self.feature_attack = None
         return self
 
-    def attack(self, num_budgets, structure_attack,
-               feature_attack) -> "UntargetedAttacker":
+    def attack(
+        self, num_budgets, structure_attack, feature_attack
+    ) -> "UntargetedAttacker":
         """Base method that describes the adversarial untargeted attack.
 
         Parameters
@@ -62,28 +64,31 @@ class UntargetedAttacker(FlipAttacker):
 
         if not _is_setup:
             raise RuntimeError(
-                f'{self.__class__.__name__} requires '
-                'a surrogate model to conduct attack. '
-                'Use `attacker.setup_surrogate(surrogate_model)`.')
+                f"{self.__class__.__name__} requires "
+                "a surrogate model to conduct attack. "
+                "Use `attacker.setup_surrogate(surrogate_model)`."
+            )
 
         if not self._is_reset:
-            raise RuntimeError('Before calling attack, you must reset '
-                               'your attacker. Call `attacker.reset()`.')
+            raise RuntimeError(
+                "Before calling attack, you must reset "
+                "your attacker. Call `attacker.reset()`."
+            )
 
         if not (structure_attack or feature_attack):
             raise RuntimeError(
-                'Either `structure_attack` or `feature_attack` must be True.')
+                "Either `structure_attack` or `feature_attack` must be True."
+            )
 
         if feature_attack and not self._allow_feature_attack:
-            raise RuntimeError(
-                f"{self.name} does NOT support attacking features.")
+            raise RuntimeError(f"{self.name} does NOT support attacking features.")
 
         if structure_attack and not self._allow_structure_attack:
-            raise RuntimeError(
-                f"{self.name} does NOT support attacking structures.")
+            raise RuntimeError(f"{self.name} does NOT support attacking structures.")
 
-        num_budgets = self._check_budget(num_budgets,
-                                         max_perturbations=self.num_edges // 2)
+        num_budgets = self._check_budget(
+            num_budgets, max_perturbations=self.num_edges // 2
+        )
 
         self.num_budgets = num_budgets
         self.structure_attack = structure_attack

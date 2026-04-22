@@ -49,10 +49,18 @@ class MLP(nn.Module):
     :class:`greatx.nn.models.supervised.LogisticRegression`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 dropout: float = 0.5, bias: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        bias: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
 
@@ -99,6 +107,7 @@ class LogisticRegression(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.MLP`
     """
+
     def __init__(self, in_channels: int, out_channels: int, bias: bool = True):
         super().__init__()
         self.lin = nn.Linear(in_channels, out_channels, bias=bias)

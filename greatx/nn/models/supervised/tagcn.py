@@ -54,27 +54,35 @@ class TAGCN(nn.Module):
     :class:`greatx.nn.layers.TAGCNConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 K: int = 2, dropout: float = 0.5, bias: bool = True,
-                 normalize: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        K: int = 2,
+        dropout: float = 0.5,
+        bias: bool = True,
+        normalize: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
 
         conv = []
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
-            conv.append(
-                TAGConv(in_channels, hid, K=K, bias=bias, normalize=normalize))
+            conv.append(TAGConv(in_channels, hid, K=K, bias=bias, normalize=normalize))
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
             conv.append(nn.Dropout(dropout))
             in_channels = hid
         conv.append(
-            TAGConv(in_channels, out_channels, K=K, bias=bias,
-                    normalize=normalize))
+            TAGConv(in_channels, out_channels, K=K, bias=bias, normalize=normalize)
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):

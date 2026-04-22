@@ -37,8 +37,15 @@ class DAGNNConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.DAGNN`
     """
-    def __init__(self, in_channels: int, out_channels: int = 1, K: int = 1,
-                 add_self_loops: bool = True, bias: bool = True):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int = 1,
+        K: int = 1,
+        add_self_loops: bool = True,
+        bias: bool = True,
+    ):
         super().__init__()
 
         assert out_channels == 1
@@ -47,27 +54,33 @@ class DAGNNConv(nn.Module):
         self.K = K
         self.add_self_loops = add_self_loops
 
-        self.lin = Linear(in_channels, out_channels, bias=bias,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=bias, weight_initializer="glorot"
+        )
 
         self.reset_parameters()
 
     def reset_parameters(self):
         self.lin.reset_parameters()
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         if self.add_self_loops:
-            edge_index, edge_weight = make_self_loops(edge_index, edge_weight,
-                                                      num_nodes=x.size(0))
+            edge_index, edge_weight = make_self_loops(
+                edge_index, edge_weight, num_nodes=x.size(0)
+            )
 
         if self.normalize:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=x.size(0),
-                                                    dtype=x.dtype,
-                                                    add_self_loops=False)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=x.size(0),
+                dtype=x.dtype,
+                add_self_loops=False,
+            )
 
         xs = [x]
         for _ in range(self.K):
@@ -82,5 +95,7 @@ class DAGNNConv(nn.Module):
         return out
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels}, K={self.K})')
+        return (
+            f"{self.__class__.__name__}({self.in_channels}, "
+            f"{self.out_channels}, K={self.K})"
+        )

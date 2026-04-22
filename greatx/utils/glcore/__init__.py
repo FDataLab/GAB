@@ -7,8 +7,7 @@ def assert_error(*args, **kwargs):
 
 
 try:
-    from glcore.ops import topk
-    from glcore.ops import dimmedian_idx
+    from glcore.ops import dimmedian_idx, topk
 except ModuleNotFoundError:
     topk = dimmedian_idx = assert_error
 

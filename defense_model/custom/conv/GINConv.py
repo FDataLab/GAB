@@ -2,18 +2,13 @@ from typing import Callable, Optional, Union
 
 import torch
 from torch import Tensor
-
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
 from torch_geometric.nn.inits import reset
-from torch_geometric.typing import (
-    Adj,
-    OptPairTensor,
-    OptTensor,
-    Size,
-    SparseTensor,
-)
+from torch_geometric.typing import Adj, OptPairTensor, OptTensor, Size, SparseTensor
 from torch_geometric.utils import spmm
+
+
 class GINConv(MessagePassing):
     r"""The graph isomorphism operator from the `"How Powerful are
     Graph Neural Networks?" https://arxiv.org/abs/1810.00826`_ paper.
@@ -51,9 +46,11 @@ class GINConv(MessagePassing):
         - **output:** node features :math:`(|\mathcal{V}|, F_{out})` or
           :math:`(|\mathcal{V}_t|, F_{out})` if bipartite
     """
-    def __init__(self, nn: Callable, eps: float = 0., train_eps: bool = False,
-                 **kwargs):
-        kwargs.setdefault('aggr', 'add')
+
+    def __init__(
+        self, nn: Callable, eps: float = 0.0, train_eps: bool = False, **kwargs
+    ):
+        kwargs.setdefault("aggr", "add")
         super().__init__(**kwargs)
         self.nn = nn
         self.initial_eps = eps
@@ -62,7 +59,7 @@ class GINConv(MessagePassing):
         if train_eps:
             self.eps = torch.nn.Parameter(torch.empty(1))
         else:
-            self.register_buffer('eps', torch.empty(1))
+            self.register_buffer("eps", torch.empty(1))
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -75,7 +72,7 @@ class GINConv(MessagePassing):
         self,
         x: Tensor,
         edge_index: torch.Tensor,
-        edge_weight: OptTensor=None,
+        edge_weight: OptTensor = None,
         size: Size = None,
     ) -> Tensor:
         if isinstance(x, Tensor):
@@ -99,4 +96,4 @@ class GINConv(MessagePassing):
         return spmm(adj_t, x[0], reduce=self.aggr)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(nn={self.nn})'
+        return f"{self.__class__.__name__}(nn={self.nn})"

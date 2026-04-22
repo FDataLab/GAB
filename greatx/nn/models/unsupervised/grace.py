@@ -69,14 +69,15 @@ class GRACE(torch.nn.Module):
     * Author's code: https://github.com/CRIPAC-DIG/GRACE
 
     """
+
     @wrapper
     def __init__(
         self,
         in_channels: int,
         hids: List[int] = [128],
-        acts: List[str] = ['prelu'],
+        acts: List[str] = ["prelu"],
         project_hids: List[int] = [128],
-        dropout: float = 0.,
+        dropout: float = 0.0,
         tau: float = 0.5,
         bias: bool = True,
         bn: bool = False,
@@ -90,8 +91,7 @@ class GRACE(torch.nn.Module):
 
         if dropout_edge is None:
             # TODO: support them
-            raise ImportError(
-                "Please install the latest version of `torch_geometric`.")
+            raise ImportError("Please install the latest version of `torch_geometric`.")
 
         encoder = []
         for hid, act in zip(hids, acts):
@@ -103,7 +103,7 @@ class GRACE(torch.nn.Module):
             in_channels = hid
 
         self.encoder = Sequential(*encoder)
-        self.decoder = MLP(in_channels, in_channels, project_hids, dropout=0.)
+        self.decoder = MLP(in_channels, in_channels, project_hids, dropout=0.0)
         self.tau = tau
         self.drop_edge1 = drop_edge1
         self.drop_edge2 = drop_edge2

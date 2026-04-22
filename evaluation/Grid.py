@@ -1,10 +1,12 @@
-from copy import deepcopy 
-import os 
+import os
 import sys
+from copy import deepcopy
 from typing import Dict, List, Union
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from static import *
+
 
 class Grid:
     """
@@ -27,13 +29,14 @@ class Grid:
     Raises:
         - AssertionError: If config_dict is empty or any hyperparameter has an empty list of values
     """
-    def __init__(self,config_dict:dict) -> None:
+
+    def __init__(self, config_dict: dict) -> None:
         self.config_dict = config_dict
 
         self._assert_config_dict()
         self.all_configs = []
 
-    def init_grid(self) -> List[Dict[str,Union[int, str, float]]]:
+    def init_grid(self) -> List[Dict[str, Union[int, str, float]]]:
         """
         Expands the configuration dictionary into a list of all possible hyperparameter combinations.
 
@@ -49,23 +52,22 @@ class Grid:
             - Keys matching the single grid identifier are treated as scalar values
             and wrapped in a list before expansion to prevent iteration over their contents
         """
-        for key,values in self.config_dict.items():
+        for key, values in self.config_dict.items():
             if key == self._get_single_grid_identifier():
                 values = [values]
-            assert len(values) > 0, "Need to define at least one value for hyper-parameter:{}".format(key)
-            self.all_configs = self._update_config(self.all_configs,values,key)
+            assert (
+                len(values) > 0
+            ), "Need to define at least one value for hyper-parameter:{}".format(key)
+            self.all_configs = self._update_config(self.all_configs, values, key)
         return self.all_configs
 
     def _update_config(
-        self,
-        all_configs:list,
-        possible_values: list,
-        hyperparameter: str
-    ) -> List[Dict[str,Union[int, str, float]]]:
+        self, all_configs: list, possible_values: list, hyperparameter: str
+    ) -> List[Dict[str, Union[int, str, float]]]:
         new_configs_list = []
         if len(all_configs) == 0:
             for possible_value in possible_values:
-                new_config = {hyperparameter:possible_value}
+                new_config = {hyperparameter: possible_value}
                 new_configs_list.append(new_config)
         else:
             old_configs_list = deepcopy(all_configs)
@@ -76,12 +78,14 @@ class Grid:
                     new_configs_list.append(new_config)
 
         return new_configs_list
-        
+
     def _get_single_grid_identifier(self):
         pass
 
     def _assert_config_dict(self):
-        assert len(self.config_dict) > 0, "Configs dictionary need at least one key-value pair"
+        assert (
+            len(self.config_dict) > 0
+        ), "Configs dictionary need at least one key-value pair"
 
 
 class ModelGrid(Grid):
@@ -102,7 +106,8 @@ class ModelGrid(Grid):
         - AssertionError: If any required hyperparameter key is missing or has no candidate values
         - Exception: If the specified optimizer or scheduler is unsupported
     """
-    def __init__(self,config_dict:dict) -> None:
+
+    def __init__(self, config_dict: dict) -> None:
         super().__init__(config_dict)
 
     def _get_single_grid_identifier(self):
@@ -112,11 +117,20 @@ class ModelGrid(Grid):
         super()._assert_config_dict()
         assert MODEL in self.config_dict, "Model is not defined"
 
-        assert_values = [NUM_LAYERS,LEARNING_RATE,HIDDEN_UNITS,EPOCHS,AGGREGATION,OPTIMIZER_STATE]
+        assert_values = [
+            NUM_LAYERS,
+            LEARNING_RATE,
+            HIDDEN_UNITS,
+            EPOCHS,
+            AGGREGATION,
+            OPTIMIZER_STATE,
+        ]
         for key in assert_values:
-            assert key in self.config_dict and len(self.config_dict[key]) > 0, "{} must be at least 1 possible value".format(key)
+            assert (
+                key in self.config_dict and len(self.config_dict[key]) > 0
+            ), "{} must be at least 1 possible value".format(key)
 
-    def init_grid(self) -> List[Dict[str,Union[int, str, float]]]:
+    def init_grid(self) -> List[Dict[str, Union[int, str, float]]]:
         """
         Expands the model configuration dictionary into all possible hyperparameter combinations,
         including optimizer and optional scheduler configurations.
@@ -140,36 +154,51 @@ class ModelGrid(Grid):
         if not scheduler_state is None:
             self._update_configs_scheduler(scheduler_state)
         return self.all_configs
-    
-    def _update_config_optimizer(self,optimizer_state):
+
+    def _update_config_optimizer(self, optimizer_state):
         if optimizer_state.get(OPTIMIZER) == ADAM:
             optimizer = [ADAM]
-            self.all_configs = self._update_config(self.all_configs,optimizer,OPTIMIZER)
+            self.all_configs = self._update_config(
+                self.all_configs, optimizer, OPTIMIZER
+            )
             opti_state_configs = []
             for key in optimizer_state:
                 if key != OPTIMIZER:
-                    schedule_state_configs = self._update_config(schedule_state_configs,optimizer_state.get(key),key)
+                    schedule_state_configs = self._update_config(
+                        schedule_state_configs, optimizer_state.get(key), key
+                    )
             if len(opti_state_configs) > 0:
-                self.all_configs = self._update_config(self.all_configs,opti_state_configs,OPTIMIZER_STATE)
+                self.all_configs = self._update_config(
+                    self.all_configs, opti_state_configs, OPTIMIZER_STATE
+                )
 
         else:
-            raise Exception("{} is not supported".format(optimizer_state.get(OPTIMIZER)))
+            raise Exception(
+                "{} is not supported".format(optimizer_state.get(OPTIMIZER))
+            )
 
-        
-    def _update_configs_scheduler(self,scheduler_state):
+    def _update_configs_scheduler(self, scheduler_state):
         if scheduler_state.get(SCHEDULER) == STEP_LR:
             scheduler_class = [STEP_LR]
-            self.all_configs = self._update_config(self.all_configs,scheduler_class,SCHEDULER)
+            self.all_configs = self._update_config(
+                self.all_configs, scheduler_class, SCHEDULER
+            )
             schedule_state_configs = []
             for key in scheduler_state:
                 if key != SCHEDULER:
-                    schedule_state_configs = self._update_config(schedule_state_configs,scheduler_state.get(key),key)
-            
-            if len(schedule_state_configs) >0 :
-                self.all_configs = self._update_config(self.all_configs,schedule_state_configs,SCHEDULER_STATE)
+                    schedule_state_configs = self._update_config(
+                        schedule_state_configs, scheduler_state.get(key), key
+                    )
+
+            if len(schedule_state_configs) > 0:
+                self.all_configs = self._update_config(
+                    self.all_configs, schedule_state_configs, SCHEDULER_STATE
+                )
         else:
-            raise Exception("Scheduler {} is not supported".format(scheduler_state.get(SCHEDULER)))
-        
+            raise Exception(
+                "Scheduler {} is not supported".format(scheduler_state.get(SCHEDULER))
+            )
+
 
 class PurificationGrid(Grid):
     """
@@ -179,9 +208,10 @@ class PurificationGrid(Grid):
         - config_dict: Dictionary mapping purification hyperparameter names to lists
           of possible values. Must contain at least one key-value pair.
     """
-    def __init__(self,config_dict:dict) -> None:
+
+    def __init__(self, config_dict: dict) -> None:
         super().__init__(config_dict)
-    
+
     def _get_single_grid_identifier(self):
         return PURIFICATION
 

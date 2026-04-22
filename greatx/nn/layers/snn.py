@@ -11,8 +11,8 @@ def heaviside(x: Tensor) -> Tensor:
 
 
 class BaseSpike(torch.autograd.Function):
-    """Base spiking function.
-    """
+    """Base spiking function."""
+
     @staticmethod
     def forward(ctx, x, alpha):
         ctx.save_for_backward(x, alpha)
@@ -32,11 +32,12 @@ class SuperSpike(BaseSpike):
     Surrogate Gradient...", Zenke et al. 2021) (2) alpha scaled by 10
     ("Training Deep Spiking Neural Networks", Ledinauskas et al. 2020)
     """
+
     @staticmethod
     def backward(ctx, grad_output):
         x, alpha = ctx.saved_tensors
         grad_input = grad_output  # .clone()
-        sg = 1 / (1 + alpha * x.abs())**2
+        sg = 1 / (1 + alpha * x.abs()) ** 2
         return grad_input * sg, None
 
 
@@ -47,28 +48,32 @@ class MultiGaussSpike(BaseSpike):
     Design choices:
     - Hyperparameters determined through grid search (Yin et al. 2021)
     """
+
     @staticmethod
     def backward(ctx, grad_output):
         x, alpha = ctx.saved_tensors
         grad_input = grad_output  # .clone()
         zero = torch.tensor(0.0)  # no need to specify device for 0-d tensors
-        sg = (1.15 * gaussian(x, zero, alpha) -
-              0.15 * gaussian(x, alpha, 6 * alpha) -
-              0.15 * gaussian(x, -alpha, 6 * alpha))
+        sg = (
+            1.15 * gaussian(x, zero, alpha)
+            - 0.15 * gaussian(x, alpha, 6 * alpha)
+            - 0.15 * gaussian(x, -alpha, 6 * alpha)
+        )
         return grad_input * sg, None
 
 
 def gaussian(x: Tensor, mu: Tensor, sigma: Tensor) -> Tensor:
-    """Gaussian PDF with broadcasting.
-    """
+    """Gaussian PDF with broadcasting."""
     return torch.exp(-((x - mu) * (x - mu)) / (2 * sigma * sigma)) / (
-        sigma * torch.sqrt(2 * torch.tensor(pi)))  # noqa
+        sigma * torch.sqrt(2 * torch.tensor(pi))
+    )  # noqa
 
 
 class TriangleSpike(BaseSpike):
     """Spike function with triangular surrogate gradient
     as in Bellec et al. 2020.
     """
+
     @staticmethod
     def backward(ctx, grad_output):
         x, alpha = ctx.saved_tensors
@@ -81,6 +86,7 @@ class ArctanSpike(BaseSpike):
     """Spike function with derivative of arctan surrogate gradient.
     Featured in Fang et al. 2020/2021.
     """
+
     @staticmethod
     def backward(ctx, grad_output):
         x, alpha = ctx.saved_tensors
@@ -95,7 +101,7 @@ class SigmoidSpike(BaseSpike):
         x, alpha = ctx.saved_tensors
         grad_input = grad_output  # .clone()
         sgax = (x * alpha).sigmoid_()
-        sg = (1. - sgax) * sgax * alpha
+        sg = (1.0 - sgax) * sgax * alpha
         return grad_input * sg, None
 
 
@@ -120,11 +126,11 @@ def arctanspike(x, thresh=torch.tensor(1.0), alpha=torch.tensor(10.0)):
 
 
 SURROGATE = {
-    'sigmoid': sigmoidspike,
-    'triangle': trianglespike,
-    'arctan': arctanspike,
-    'mg': mgspike,
-    'super': superspike,
+    "sigmoid": sigmoidspike,
+    "triangle": trianglespike,
+    "arctan": arctanspike,
+    "mg": mgspike,
+    "super": superspike,
 }
 
 
@@ -165,14 +171,15 @@ class IF(nn.Module):
         :obj:'mg', and :obj:'super'), by default 'sigmoid'
 
     """
+
     def __init__(
         self,
         v_threshold: float = 1.0,
-        v_reset: float = 0.,
+        v_reset: float = 0.0,
         alpha: float = 1.0,
-        gamma: float = 0.,
+        gamma: float = 0.0,
         thresh_decay: float = 1.0,
-        surrogate: str = 'sigmoid',
+        surrogate: str = "sigmoid",
     ):
         super().__init__()
         self.v_threshold = v_threshold
@@ -180,13 +187,12 @@ class IF(nn.Module):
         self.gamma = gamma
         self.thresh_decay = thresh_decay
         self.surrogate = get_surrogate(surrogate)
-        self.register_buffer("alpha", torch.as_tensor(alpha,
-                                                      dtype=torch.float))
+        self.register_buffer("alpha", torch.as_tensor(alpha, dtype=torch.float))
         self.reset()
 
     def reset(self):
         """Reset neuron states."""
-        self.v = 0.
+        self.v = 0.0
         self.v_th = self.v_threshold
 
     def forward(self, dv: Tensor) -> Tensor:
@@ -226,15 +232,16 @@ class LIF(nn.Module):
         :obj:'mg', and :obj:'super'), by default 'sigmoid'
 
     """
+
     def __init__(
         self,
         v_threshold: float = 1.0,
-        v_reset: float = 0.,
+        v_reset: float = 0.0,
         tau: float = 1.0,
         alpha: float = 1.0,
-        gamma: float = 0.,
+        gamma: float = 0.0,
         thresh_decay: float = 1.0,
-        surrogate: str = 'sigmoid',
+        surrogate: str = "sigmoid",
     ):
         super().__init__()
         self.v_threshold = v_threshold
@@ -243,13 +250,12 @@ class LIF(nn.Module):
         self.thresh_decay = thresh_decay
         self.surrogate = get_surrogate(surrogate)
         self.register_buffer("tau", torch.as_tensor(tau, dtype=torch.float))
-        self.register_buffer("alpha", torch.as_tensor(alpha,
-                                                      dtype=torch.float))
+        self.register_buffer("alpha", torch.as_tensor(alpha, dtype=torch.float))
         self.reset()
 
     def reset(self):
         """Reset neuron states."""
-        self.v = 0.
+        self.v = 0.0
         self.v_th = self.v_threshold
 
     def forward(self, dv: Tensor) -> Tensor:
@@ -290,15 +296,16 @@ class PLIF(nn.Module):
         :obj:'mg', and :obj:'super'), by default 'sigmoid'
 
     """
+
     def __init__(
         self,
         v_threshold: float = 1.0,
-        v_reset: float = 0.,
+        v_reset: float = 0.0,
         tau: float = 1.0,
         alpha: float = 1.0,
-        gamma: float = 0.,
+        gamma: float = 0.0,
         thresh_decay: float = 1.0,
-        surrogate: str = 'sigmoid',
+        surrogate: str = "sigmoid",
     ):
         super().__init__()
         self.v_threshold = v_threshold
@@ -307,14 +314,14 @@ class PLIF(nn.Module):
         self.thresh_decay = thresh_decay
         self.surrogate = get_surrogate(surrogate)
         self.register_parameter(
-            "tau", nn.Parameter(torch.as_tensor(tau, dtype=torch.float)))
-        self.register_buffer("alpha", torch.as_tensor(alpha,
-                                                      dtype=torch.float))
+            "tau", nn.Parameter(torch.as_tensor(tau, dtype=torch.float))
+        )
+        self.register_buffer("alpha", torch.as_tensor(alpha, dtype=torch.float))
         self.reset()
 
     def reset(self):
         """Reset neuron states."""
-        self.v = 0.
+        self.v = 0.0
         self.v_th = self.v_threshold
 
     def forward(self, dv: Tensor) -> Tensor:

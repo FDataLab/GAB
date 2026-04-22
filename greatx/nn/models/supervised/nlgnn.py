@@ -60,33 +60,42 @@ class NLGCN(nn.Module):
     * https://github.com/divelab/Non-Local-GNN
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 kernel: int = 5, dropout: float = 0.5, bn: bool = False,
-                 normalize: bool = True, bias: bool = True):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        kernel: int = 5,
+        dropout: float = 0.5,
+        bn: bool = False,
+        normalize: bool = True,
+        bias: bool = True,
+    ):
 
         super().__init__()
         conv = []
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
-            conv.append(
-                GCNConv(in_channels, hid, bias=bias, normalize=normalize))
+            conv.append(GCNConv(in_channels, hid, bias=bias, normalize=normalize))
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
             conv.append(nn.Dropout(dropout))
             in_channels = hid
 
-        conv.append(
-            GCNConv(in_channels, out_channels, bias=bias, normalize=normalize))
+        conv.append(GCNConv(in_channels, out_channels, bias=bias, normalize=normalize))
         self.conv = Sequential(*conv)
 
         self.proj = nn.Linear(out_channels, 1)
-        self.conv1d_1 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
-        self.conv1d_2 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
+        self.conv1d_1 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
+        self.conv1d_2 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
         self.lin = nn.Linear(2 * out_channels, out_channels)
         self.conv1d_dropout = nn.Dropout(dropout)
 
@@ -106,7 +115,8 @@ class NLGCN(nn.Module):
 
         sorted_x = g_score_sorted * x1[sort_idx].squeeze()
         sorted_x = torch.transpose(sorted_x, 0, 1).unsqueeze(
-            0)  # [1, dataset.num_classes, num_nodes]
+            0
+        )  # [1, dataset.num_classes, num_nodes]
         sorted_x = self.conv1d_1(sorted_x).relu()
         sorted_x = self.conv1d_dropout(sorted_x)
         sorted_x = self.conv1d_2(sorted_x)
@@ -173,11 +183,19 @@ class NLMLP(nn.Module):
     * https://github.com/divelab/Non-Local-GNN
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [32], acts: List[str] = ['relu'],
-                 kernel: int = 5, dropout: float = 0.5, bias: bool = True,
-                 bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [32],
+        acts: List[str] = ["relu"],
+        kernel: int = 5,
+        dropout: float = 0.5,
+        bias: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
         conv = []
@@ -194,10 +212,12 @@ class NLMLP(nn.Module):
         self.conv = Sequential(*conv)
 
         self.proj = nn.Linear(out_channels, 1)
-        self.conv1d_1 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
-        self.conv1d_2 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
+        self.conv1d_1 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
+        self.conv1d_2 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
         self.lin = nn.Linear(2 * out_channels, out_channels)
         self.conv1d_dropout = nn.Dropout(dropout)
 
@@ -217,7 +237,8 @@ class NLMLP(nn.Module):
 
         sorted_x = g_score_sorted * x1[sort_idx].squeeze()
         sorted_x = torch.transpose(sorted_x, 0, 1).unsqueeze(
-            0)  # [1, dataset.num_classes, num_nodes]
+            0
+        )  # [1, dataset.num_classes, num_nodes]
         sorted_x = self.conv1d_1(sorted_x).relu()
         sorted_x = self.conv1d_dropout(sorted_x)
         sorted_x = self.conv1d_2(sorted_x)
@@ -285,20 +306,31 @@ class NLGAT(nn.Module):
     * https://github.com/divelab/Non-Local-GNN
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [8], num_heads: list = [8],
-                 acts: List[str] = ['elu'], kernel: int = 5,
-                 dropout: float = 0.6, bias: bool = True, bn: bool = False,
-                 includes=['num_heads']):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [8],
+        num_heads: list = [8],
+        acts: List[str] = ["elu"],
+        kernel: int = 5,
+        dropout: float = 0.6,
+        bias: bool = True,
+        bn: bool = False,
+        includes=["num_heads"],
+    ):
 
         super().__init__()
         head = 1
         conv = []
         for hid, num_head, act in zip(hids, num_heads, acts):
             conv.append(
-                GATConv(in_channels * head, hid, heads=num_head, bias=bias,
-                        dropout=dropout))
+                GATConv(
+                    in_channels * head, hid, heads=num_head, bias=bias, dropout=dropout
+                )
+            )
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
@@ -307,15 +339,24 @@ class NLGAT(nn.Module):
             head = num_head
 
         conv.append(
-            GATConv(in_channels * head, out_channels, heads=1, bias=bias,
-                    concat=False, dropout=dropout))
+            GATConv(
+                in_channels * head,
+                out_channels,
+                heads=1,
+                bias=bias,
+                concat=False,
+                dropout=dropout,
+            )
+        )
         self.conv = Sequential(*conv)
 
         self.proj = nn.Linear(out_channels, 1)
-        self.conv1d_1 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
-        self.conv1d_2 = nn.Conv1d(out_channels, out_channels, kernel,
-                                  padding=int((kernel - 1) / 2))
+        self.conv1d_1 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
+        self.conv1d_2 = nn.Conv1d(
+            out_channels, out_channels, kernel, padding=int((kernel - 1) / 2)
+        )
         self.lin = nn.Linear(2 * out_channels, out_channels)
         self.conv1d_dropout = nn.Dropout(dropout)
 
@@ -335,7 +376,8 @@ class NLGAT(nn.Module):
 
         sorted_x = g_score_sorted * x1[sort_idx].squeeze()
         sorted_x = torch.transpose(sorted_x, 0, 1).unsqueeze(
-            0)  # [1, dataset.num_classes, num_nodes]
+            0
+        )  # [1, dataset.num_classes, num_nodes]
         sorted_x = self.conv1d_1(sorted_x).relu()
         sorted_x = self.conv1d_dropout(sorted_x)
         sorted_x = self.conv1d_2(sorted_x)

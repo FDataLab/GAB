@@ -12,8 +12,7 @@ from greatx.nn.layers.gcn_conv import make_gcn_norm, make_self_loops
 
 
 def get_inc(edge_index: Adj, num_nodes: Optional[int] = None) -> SparseTensor:
-    """Compute the incident matrix
-    """
+    """Compute the incident matrix"""
     device = edge_index.device
     if torch.is_tensor(edge_index):
         row_index, col_index = edge_index
@@ -29,28 +28,26 @@ def get_inc(edge_index: Adj, num_nodes: Optional[int] = None) -> SparseTensor:
     col_index = col_index[mask]
     num_edges = row_index.numel()
 
-    row = torch.cat([
-        torch.arange(num_edges, device=device),
-        torch.arange(num_edges, device=device)
-    ])
+    row = torch.cat(
+        [torch.arange(num_edges, device=device), torch.arange(num_edges, device=device)]
+    )
     col = torch.cat([row_index, col_index])
-    value = torch.cat([
-        torch.ones(num_edges, device=device),
-        -torch.ones(num_edges, device=device)
-    ])
-    inc_mat = SparseTensor(row=row, rowptr=None, col=col, value=value,
-                           sparse_sizes=(num_edges, num_nodes))
+    value = torch.cat(
+        [torch.ones(num_edges, device=device), -torch.ones(num_edges, device=device)]
+    )
+    inc_mat = SparseTensor(
+        row=row, rowptr=None, col=col, value=value, sparse_sizes=(num_edges, num_nodes)
+    )
     return inc_mat
 
 
-def inc_norm(inc: SparseTensor, edge_index: Adj,
-             num_nodes: Optional[int] = None) -> SparseTensor:
-    """Normalize the incident matrix
-    """
+def inc_norm(
+    inc: SparseTensor, edge_index: Adj, num_nodes: Optional[int] = None
+) -> SparseTensor:
+    """Normalize the incident matrix"""
 
     if torch.is_tensor(edge_index):
-        deg = degree(edge_index[0], num_nodes=num_nodes,
-                     dtype=torch.float).clamp(min=1)
+        deg = degree(edge_index[0], num_nodes=num_nodes, dtype=torch.float).clamp(min=1)
     else:
         deg = edge_index.sum(1).clamp(min=1)
 
@@ -94,10 +91,17 @@ class ElasticConv(nn.Module):
 
     _cached: Optional[SparseTensor] = None  # incident matrix
 
-    def __init__(self, K: int = 3, lambda_amp: float = 0.1,
-                 normalize: bool = True, add_self_loops: bool = True,
-                 lambda1: float = 3., lambda2: float = 3., L21: bool = True,
-                 cached: bool = True):
+    def __init__(
+        self,
+        K: int = 3,
+        lambda_amp: float = 0.1,
+        normalize: bool = True,
+        add_self_loops: bool = True,
+        lambda1: float = 3.0,
+        lambda2: float = 3.0,
+        L21: bool = True,
+        cached: bool = True,
+    ):
 
         super().__init__()
 
@@ -118,8 +122,9 @@ class ElasticConv(nn.Module):
         self._cached = None
         return self
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         cache = self._cached
@@ -128,13 +133,18 @@ class ElasticConv(nn.Module):
             if self.add_self_loops:
                 # NOTE: we do not support Dense adjacency matrix here
                 edge_index, edge_weight = make_self_loops(
-                    edge_index, edge_weight, num_nodes=x.size(0))
+                    edge_index, edge_weight, num_nodes=x.size(0)
+                )
 
             if self.normalize:
                 # NOTE: we do not support Dense adjacency matrix here
                 edge_index, edge_weight = make_gcn_norm(
-                    edge_index, edge_weight, num_nodes=x.size(0),
-                    dtype=x.dtype, add_self_loops=False)
+                    edge_index,
+                    edge_weight,
+                    num_nodes=x.size(0),
+                    dtype=x.dtype,
+                    add_self_loops=False,
+                )
 
             # compute incident matrix before normalizing edge_index
             inc_mat = get_inc(edge_index, num_nodes=x.size(0))
@@ -149,8 +159,13 @@ class ElasticConv(nn.Module):
 
         return self.emp_forward(x, inc_mat, edge_index, edge_weight)
 
-    def emp_forward(self, x: Tensor, inc_mat: SparseTensor, edge_index: Adj,
-                    edge_weight: OptTensor = None) -> Tensor:
+    def emp_forward(
+        self,
+        x: Tensor,
+        inc_mat: SparseTensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+    ) -> Tensor:
         lambda1 = self.lambda1
         lambda2 = self.lambda2
 
@@ -193,8 +208,7 @@ class ElasticConv(nn.Module):
         row_norm = torch.norm(x, p=2, dim=1)
         scale = torch.clamp(row_norm, max=lambda_)
         index = row_norm > 0
-        scale[index] = scale[index] / \
-            row_norm[index]  # avoid to be devided by 0
+        scale[index] = scale[index] / row_norm[index]  # avoid to be devided by 0
         return scale.unsqueeze(1) * x
 
     def __repr__(self) -> str:

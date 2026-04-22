@@ -12,14 +12,15 @@ from torch_sparse import SparseTensor, fill_diag
 from greatx.functional import spmm
 
 
-def dense_gcn_norm(adj: Tensor, improved: bool = False,
-                   add_self_loops: bool = True, rate: float = -0.5) -> Tensor:
-    fill_value = 2. if improved else 1.
+def dense_gcn_norm(
+    adj: Tensor, improved: bool = False, add_self_loops: bool = True, rate: float = -0.5
+) -> Tensor:
+    fill_value = 2.0 if improved else 1.0
     if add_self_loops:
         adj = dense_add_self_loops(adj, fill_value)
     deg = adj.sum(dim=1)
     deg_inv_sqrt = deg.pow_(rate)
-    deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float('inf'), 0.)
+    deg_inv_sqrt.masked_fill_(deg_inv_sqrt == float("inf"), 0.0)
     norm_src = deg_inv_sqrt.view(1, -1)
     norm_dst = deg_inv_sqrt.view(-1, 1)
     adj = norm_src * adj * norm_dst
@@ -27,7 +28,7 @@ def dense_gcn_norm(adj: Tensor, improved: bool = False,
 
 
 def dense_add_self_loops(adj: Tensor, fill_value: float = 1.0) -> Tensor:
-    diag = torch.diag(adj.new_full((adj.size(0), ), fill_value))
+    diag = torch.diag(adj.new_full((adj.size(0),), fill_value))
     return adj + diag
 
 
@@ -66,12 +67,12 @@ def make_self_loops(
         added self-loop edges.
     """
 
-    fill_value = 2. if improved else 1.
+    fill_value = 2.0 if improved else 1.0
     if isinstance(edge_index, Tensor) and edge_index.dtype == torch.long:
         # Sparse edge_index with shape [2, M]
-        edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
-                                                 fill_value=fill_value,
-                                                 num_nodes=num_nodes)
+        edge_index, edge_weight = add_self_loops(
+            edge_index, edge_weight, fill_value=fill_value, num_nodes=num_nodes
+        )
     elif isinstance(edge_index, Tensor) and edge_index.dtype == torch.float:
         # N by N dense adjacency matrix
         edge_index = dense_add_self_loops(edge_index, fill_value)
@@ -118,17 +119,27 @@ def make_gcn_norm(
     """
     if isinstance(edge_index, Tensor) and edge_index.dtype == torch.long:
         # Sparse edge_index with shape [2, M]
-        edge_index, edge_weight = gcn_norm(edge_index, edge_weight,
-                                           num_nodes=num_nodes, improved=False,
-                                           add_self_loops=add_self_loops,
-                                           dtype=dtype)
+        edge_index, edge_weight = gcn_norm(
+            edge_index,
+            edge_weight,
+            num_nodes=num_nodes,
+            improved=False,
+            add_self_loops=add_self_loops,
+            dtype=dtype,
+        )
     elif isinstance(edge_index, Tensor) and edge_index.dtype == torch.float:
         # N by N dense adjacency matrix
-        edge_index = dense_gcn_norm(edge_index, improved=False,
-                                    add_self_loops=add_self_loops)
+        edge_index = dense_gcn_norm(
+            edge_index, improved=False, add_self_loops=add_self_loops
+        )
     elif isinstance(edge_index, SparseTensor):
-        edge_index = gcn_norm(edge_index, num_nodes=num_nodes, improved=False,
-                              add_self_loops=add_self_loops, dtype=dtype)
+        edge_index = gcn_norm(
+            edge_index,
+            num_nodes=num_nodes,
+            improved=False,
+            add_self_loops=add_self_loops,
+            dtype=dtype,
+        )
     else:
         raise ValueError(f"Type {type(edge_index)} is not supported.")
 
@@ -177,10 +188,17 @@ class GCNConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.GCN`
     """
-    def __init__(self, in_channels: int, out_channels: int,
-                 improved: bool = False, cached: bool = False,
-                 add_self_loops: bool = True, normalize: bool = True,
-                 bias: bool = True):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        improved: bool = False,
+        cached: bool = False,
+        add_self_loops: bool = True,
+        normalize: bool = True,
+        bias: bool = True,
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -190,13 +208,14 @@ class GCNConv(nn.Module):
         self.add_self_loops = add_self_loops
         self.normalize = normalize
 
-        self.lin = Linear(in_channels, out_channels, bias=False,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=False, weight_initializer="glorot"
+        )
 
         if bias:
             self.bias = nn.Parameter(torch.Tensor(out_channels))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         self.reset_parameters()
 
@@ -204,22 +223,26 @@ class GCNConv(nn.Module):
         self.lin.reset_parameters()
         zeros(self.bias)
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         x = self.lin(x)
 
         if self.add_self_loops:
-            edge_index, edge_weight = make_self_loops(edge_index, edge_weight,
-                                                      num_nodes=x.size(0),
-                                                      improved=self.improved)
+            edge_index, edge_weight = make_self_loops(
+                edge_index, edge_weight, num_nodes=x.size(0), improved=self.improved
+            )
 
         if self.normalize:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=x.size(0),
-                                                    dtype=x.dtype,
-                                                    add_self_loops=False)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=x.size(0),
+                dtype=x.dtype,
+                add_self_loops=False,
+            )
 
         out = spmm(x, edge_index, edge_weight)
 
@@ -229,5 +252,4 @@ class GCNConv(nn.Module):
         return out
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels})')
+        return f"{self.__class__.__name__}({self.in_channels}, " f"{self.out_channels})"

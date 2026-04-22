@@ -53,11 +53,20 @@ class AirGNN(nn.Module):
     :class:`greatx.nn.layers.AdaptiveConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [64], acts: List[str] = ['relu'],
-                 K: int = 3, lambda_amp: float = 0.5, dropout: float = 0.8,
-                 bias: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [64],
+        acts: List[str] = ["relu"],
+        K: int = 3,
+        lambda_amp: float = 0.5,
+        dropout: float = 0.8,
+        bias: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
         assert len(hids) > 0

@@ -2,11 +2,8 @@ from typing import Optional
 
 import torch
 from torch import Tensor
-
 from torch_geometric.nn.aggr import Aggregation
-from torch_geometric.utils import softmax
-from torch_geometric.utils import scatter, segment, to_dense_batch
-
+from torch_geometric.utils import scatter, segment, softmax, to_dense_batch
 
 
 class WeightedAggregation(Aggregation):
@@ -25,6 +22,7 @@ class WeightedAggregation(Aggregation):
         - **output:** graph features :math:`(*, |\mathcal{G}|, F_{out})` or
           node features :math:`(*, |\mathcal{V}|, F_{out})`
     """
+
     def forward(
         self,
         x: Tensor,
@@ -68,17 +66,22 @@ class WeightedAggregation(Aggregation):
             index = x.new_zeros(x.size(dim), dtype=torch.long)
 
         if weight is not None and weight.dim() != 1:
-            raise ValueError(f"The 'weight' vector needs to be one-"
-                             f"dimensional (got {weight.dim()} dimensions)")
+            raise ValueError(
+                f"The 'weight' vector needs to be one-"
+                f"dimensional (got {weight.dim()} dimensions)"
+            )
 
         if weight is not None and weight.size(0) != x.size(dim):
-            raise ValueError(f"The input tensor has {x.size(dim)} elements, "
-                             f"but the 'weight' vector holds {weight.size(0)} "
-                             f"elements. Please make sure that the size of "
-                             f"the inputs align")
+            raise ValueError(
+                f"The input tensor has {x.size(dim)} elements, "
+                f"but the 'weight' vector holds {weight.size(0)} "
+                f"elements. Please make sure that the size of "
+                f"the inputs align"
+            )
 
-        return super().__call__(x, weight=weight, index=index, ptr=ptr,
-                                dim_size=dim_size, dim=dim, **kwargs)
+        return super().__call__(
+            x, weight=weight, index=index, ptr=ptr, dim_size=dim_size, dim=dim, **kwargs
+        )
 
     # Helper methods ##########################################################
 
@@ -90,7 +93,7 @@ class WeightedAggregation(Aggregation):
         ptr: Optional[Tensor] = None,
         dim_size: Optional[int] = None,
         dim: int = -2,
-        reduce: str = 'sum',
+        reduce: str = "sum",
     ) -> Tensor:
 
         sizes = [1] * x.dim()
@@ -117,9 +120,8 @@ class WeightedAggregation(Aggregation):
         # to ensure that we require `weight` to be passed to the computation:
         if weight is None:
             raise NotImplementedError(
-                "Weighted aggregation requires 'weight' to be specified")
-
-
+                "Weighted aggregation requires 'weight' to be specified"
+            )
 
 
 class WeightedQuantileAggregation(WeightedAggregation):
@@ -144,18 +146,25 @@ class WeightedQuantileAggregation(WeightedAggregation):
         fill_value (float, optional): The default value in the case no entry is
             found for a given index (default: :obj:`0.0`).
     """
+
     def __init__(self, q: float, fill_value: float = 0.0):
         super().__init__()
 
-        if not 0. <= q <= 1.:
+        if not 0.0 <= q <= 1.0:
             raise ValueError("`q` must be in the range [0, 1].")
 
         self.q = q
         self.fill_value = fill_value
 
-    def forward(self, x: Tensor, index: Optional[Tensor] = None,
-                weight: Optional[Tensor] = None, ptr: Optional[Tensor] = None,
-                dim_size: Optional[int] = None, dim: int = -2) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        index: Optional[Tensor] = None,
+        weight: Optional[Tensor] = None,
+        ptr: Optional[Tensor] = None,
+        dim_size: Optional[int] = None,
+        dim: int = -2,
+    ) -> Tensor:
 
         self.assert_index_present(index)
 
@@ -179,11 +188,12 @@ class WeightedQuantileAggregation(WeightedAggregation):
         if weight is None:
             weight = torch.ones_like(index, dtype=x.dtype) / count[index]
         elif weight.min() < 0:
-            raise ValueError("The weights must be positive, but the "
-                             f"minimum weight is {weight.min().item()}.")
+            raise ValueError(
+                "The weights must be positive, but the "
+                f"minimum weight is {weight.min().item()}."
+            )
 
-        cumweight = torch.zeros(count.shape[0], dtype=weight.dtype,
-                                device=x.device)
+        cumweight = torch.zeros(count.shape[0], dtype=weight.dtype, device=x.device)
         cumweight = cumweight.scatter_add(0, index, weight)
 
         shape = [1] * x.dim()
@@ -207,15 +217,13 @@ class WeightedQuantileAggregation(WeightedAggregation):
             weight_ = weight_.cumsum(0)
 
             diff = (weight_ >= self.q).float()
-            prep_shape = ((1, x.shape[1]) if dim == 0 else (x.shape[0], 1))
-            diff = diff.diff(dim=dim,
-                             prepend=torch.zeros(prep_shape, device=x.device))
+            prep_shape = (1, x.shape[1]) if dim == 0 else (x.shape[0], 1)
+            diff = diff.diff(dim=dim, prepend=torch.zeros(prep_shape, device=x.device))
             # Either where we accumulate to q or the first element of a row
-            first_element_diff = index.diff(
-                prepend=torch.zeros_like(index[:1]))
-            quantile_mask = ((diff > 0) |
-                             ((diff == 0) &
-                              (first_element_diff.view(shape) > 0)))
+            first_element_diff = index.diff(prepend=torch.zeros_like(index[:1]))
+            quantile_mask = (diff > 0) | (
+                (diff == 0) & (first_element_diff.view(shape) > 0)
+            )
             quantile_index, quantile_dim = torch.where(quantile_mask)
 
             # Convert back to the original indices
@@ -227,11 +235,10 @@ class WeightedQuantileAggregation(WeightedAggregation):
             quantile_dim = quantile_dim.reshape((dim_size, -1))
 
             # Reorder each row by feature dimension
-            quantile_index = torch.scatter(torch.zeros_like(quantile_dim),
-                                           other_dim, quantile_dim,
-                                           quantile_index)
-            quantile_dim = torch.arange(x.shape[other_dim],
-                                        device=x.device)[None, :]
+            quantile_index = torch.scatter(
+                torch.zeros_like(quantile_dim), other_dim, quantile_dim, quantile_index
+            )
+            quantile_dim = torch.arange(x.shape[other_dim], device=x.device)[None, :]
 
         # Retrieve closest quantile element
         quantile = x[quantile_index, quantile_dim]
@@ -241,7 +248,7 @@ class WeightedQuantileAggregation(WeightedAggregation):
         return cumweight * quantile
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(q={self._q})'
+        return f"{self.__class__.__name__}(q={self._q})"
 
 
 class WeightedMedianAggregation(WeightedQuantileAggregation):
@@ -263,6 +270,7 @@ class WeightedMedianAggregation(WeightedQuantileAggregation):
         fill_value (float, optional): The default value in the case no entry is
             found for a given index (default: :obj:`0.0`).
     """
+
     def __init__(self, fill_value: float = 0.0):
         super().__init__(0.5, fill_value)
 
@@ -289,6 +297,7 @@ class SoftMedianAggregation(WeightedAggregation):
         p (float, optional): Norm for distances (via :obj:`torch.norm`).
             (default: :obj:`2.0`)
     """
+
     def __init__(self, T: float = 1.0, p: float = 2.0):
         super().__init__()
 
@@ -303,9 +312,15 @@ class SoftMedianAggregation(WeightedAggregation):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(T={self.T}, p={self.p})"
 
-    def forward(self, x: Tensor, index: Optional[Tensor] = None,
-                weight: Optional[Tensor] = None, ptr: Optional[Tensor] = None,
-                dim_size: Optional[int] = None, dim: int = -2) -> Tensor:
+    def forward(
+        self,
+        x: Tensor,
+        index: Optional[Tensor] = None,
+        weight: Optional[Tensor] = None,
+        ptr: Optional[Tensor] = None,
+        dim_size: Optional[int] = None,
+        dim: int = -2,
+    ) -> Tensor:
 
         self.assert_index_present(index)
 
@@ -322,14 +337,14 @@ class SoftMedianAggregation(WeightedAggregation):
             count = torch.bincount(index, minlength=dim_size or 0)
             weight = torch.ones_like(index, dtype=x.dtype) / count[index]
 
-        weight_sums = self.reduce(weight, index, ptr, dim_size, dim,
-                                  reduce='sum')
+        weight_sums = self.reduce(weight, index, ptr, dim_size, dim, reduce="sum")
 
         # x: Tensor, index: Optional[Tensor] = None,
         #         weight: Optional[Tensor] = None, ptr: Optional[Tensor] = None,
         #         dim_size: Optional[int] = None, dim: int = -2
-        x_median = self.dimwise_median(x = x, index=index, weight=weight,
-                                       dim_size=dim_size, dim=dim)
+        x_median = self.dimwise_median(
+            x=x, index=index, weight=weight, dim_size=dim_size, dim=dim
+        )
         x_median = x_median / weight_sums.view(shape)
         x_median = x_median.take_along_dim(index.view(shape), dim=dim)
 
@@ -342,16 +357,12 @@ class SoftMedianAggregation(WeightedAggregation):
 
         # Final weights to reweigh inputs per segment
         weight = soft_weights * weight
-        segment_weight = self.reduce(weight, index, ptr, dim_size, dim,
-                                     reduce='sum')
+        segment_weight = self.reduce(weight, index, ptr, dim_size, dim, reduce="sum")
         weight = weight / segment_weight[index] * weight_sums[index]
 
-        out = self.weighted_reduce(x, index, weight, ptr, dim_size, dim,
-                                   reduce='sum')
+        out = self.weighted_reduce(x, index, weight, ptr, dim_size, dim, reduce="sum")
 
         return out
-    
-
 
 
 def expand_left(ptr: Tensor, dim: int, dims: int) -> Tensor:

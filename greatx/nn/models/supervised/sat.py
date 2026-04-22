@@ -52,25 +52,31 @@ class SAT(nn.Module):
     :class:`greatx.nn.layers.SATConv`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 dropout: float = 0.5, bias: bool = False,
-                 normalize: bool = True, bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.5,
+        bias: bool = False,
+        normalize: bool = True,
+        bn: bool = False,
+    ):
         super().__init__()
 
         conv = []
         assert len(hids) == len(acts)
         for hid, act in zip(hids, acts):
-            conv.append(
-                SATConv(in_channels, hid, bias=bias, normalize=normalize))
+            conv.append(SATConv(in_channels, hid, bias=bias, normalize=normalize))
             if bn:
                 conv.append(nn.BatchNorm1d(hid))
             conv.append(activations.get(act))
             conv.append(nn.Dropout(dropout))
             in_channels = hid
-        conv.append(
-            SATConv(in_channels, out_channels, bias=bias, normalize=normalize))
+        conv.append(SATConv(in_channels, out_channels, bias=bias, normalize=normalize))
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):

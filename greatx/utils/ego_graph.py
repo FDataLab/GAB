@@ -4,13 +4,14 @@ from typing import Union
 import numpy as np
 import scipy.sparse as sp
 
-ego_graph_nodes_edges = namedtuple('ego_graph', ['nodes', 'edges'])
+ego_graph_nodes_edges = namedtuple("ego_graph", ["nodes", "edges"])
 
-__all__ = ['ego_graph']
+__all__ = ["ego_graph"]
 
 
-def ego_graph(adj_matrix: sp.csr_matrix, targets: Union[int, list],
-              hops: int = 1) -> ego_graph_nodes_edges:
+def ego_graph(
+    adj_matrix: sp.csr_matrix, targets: Union[int, list], hops: int = 1
+) -> ego_graph_nodes_edges:
     """Returns induced subgraph of neighbors centered at node n within
     a given radius.
 
@@ -64,7 +65,7 @@ def ego_graph(adj_matrix: sp.csr_matrix, targets: Union[int, list],
         end = len(targets)
         while start < end:
             head = targets[start]
-            nbrs = indices[indptr[head]:indptr[head + 1]]
+            nbrs = indices[indptr[head] : indptr[head + 1]]
             for u in nbrs:
                 if seen[u] < 0:
                     targets.append(u)
@@ -79,8 +80,9 @@ def ego_graph(adj_matrix: sp.csr_matrix, targets: Union[int, list],
     else:
         e = []
 
-    return ego_graph_nodes_edges(nodes=np.asarray(targets),
-                                 edges=np.asarray(list(edges.keys()) + e).T)
+    return ego_graph_nodes_edges(
+        nodes=np.asarray(targets), edges=np.asarray(list(edges.keys()) + e).T
+    )
 
 
 def get_numbafn():
@@ -88,16 +90,20 @@ def get_numbafn():
     from numba.typed import Dict
 
     @njit
-    def _get_remaining_edges(indices: np.ndarray, indptr: np.ndarray,
-                             last_level: np.ndarray, seen: np.ndarray,
-                             hops: int) -> list:
+    def _get_remaining_edges(
+        indices: np.ndarray,
+        indptr: np.ndarray,
+        last_level: np.ndarray,
+        seen: np.ndarray,
+        hops: int,
+    ) -> list:
         edges = []
         mapping = Dict.empty(
             key_type=types.int64,
             value_type=types.int64,
         )
         for u in last_level:
-            nbrs = indices[indptr[u]:indptr[u + 1]]
+            nbrs = indices[indptr[u] : indptr[u + 1]]
             nbrs = nbrs[seen[nbrs] == hops]
             mapping[u] = 1
             for v in nbrs:

@@ -17,13 +17,19 @@ class UniversalDefense(torch.nn.Module):
     <https://arxiv.org/abs/2204.09803>`_ paper (arXiv'22)
 
     """
+
     def __init__(self, device: str = "cpu"):
         super().__init__()
         self.device = torch.device(device)
         self._anchors = None
 
-    def forward(self, data: Data, target_nodes: Union[int, Tensor],
-                k: int = 50, symmetric: bool = True) -> Data:
+    def forward(
+        self,
+        data: Data,
+        target_nodes: Union[int, Tensor],
+        k: int = 50,
+        symmetric: bool = True,
+    ) -> Data:
         """Return the defended graph with defensive perturbation
         performed on.
 
@@ -47,13 +53,12 @@ class UniversalDefense(torch.nn.Module):
             performed on the target nodes
         """
         data = copy(data)
-        data.edge_index = remove_edges(data.edge_index,
-                                       self.removed_edges(target_nodes, k),
-                                       symmetric=symmetric)
+        data.edge_index = remove_edges(
+            data.edge_index, self.removed_edges(target_nodes, k), symmetric=symmetric
+        )
         return data
 
-    def removed_edges(self, target_nodes: Union[int, Tensor],
-                      k: int = 50) -> Tensor:
+    def removed_edges(self, target_nodes: Union[int, Tensor], k: int = 50) -> Tensor:
         """Return edges to remove with the defensive perturbation performed on
         on the target nodes
 
@@ -110,8 +115,7 @@ class UniversalDefense(torch.nn.Module):
             the 0-1 (boolean) universal patch where 1
             denotes the edges to be removed.
         """
-        _patch = torch.zeros(self.num_nodes, dtype=torch.bool,
-                             device=self.device)
+        _patch = torch.zeros(self.num_nodes, dtype=torch.bool, device=self.device)
         _patch[self.anchors(k=k)] = True
         return _patch
 
@@ -150,23 +154,28 @@ class GUARD(UniversalDefense, Surrogate):
         perturbed_data = ... # Other PyG-like Data
         guard(perturbed_data, target_node, k=50)
     """
-    def __init__(self, data: Data, alpha: float = 2, batch_size: int = 512,
-                 device: str = "cpu"):
+
+    def __init__(
+        self, data: Data, alpha: float = 2, batch_size: int = 512, device: str = "cpu"
+    ):
         super().__init__(device=device)
         self.data = data
         self.alpha = alpha
         self.batch_size = batch_size
         self.influence_score = None
-        self.deg = degree(data.edge_index[0], num_nodes=data.num_nodes,
-                          dtype=torch.float)
+        self.deg = degree(
+            data.edge_index[0], num_nodes=data.num_nodes, dtype=torch.float
+        )
 
     @torch.no_grad()
-    def setup_surrogate(self, surrogate: torch.nn.Module,
-                        victim_labels: Tensor) -> "GUARD":
+    def setup_surrogate(
+        self, surrogate: torch.nn.Module, victim_labels: Tensor
+    ) -> "GUARD":
         from greatx.nn.models.supervised import GCN, SGC
 
-        Surrogate.setup_surrogate(self, surrogate=surrogate, freeze=True,
-                                  required=(SGC, GCN))
+        Surrogate.setup_surrogate(
+            self, surrogate=surrogate, freeze=True, required=(SGC, GCN)
+        )
         W = None
         for para in self.surrogate.parameters():
             if para.ndim == 1:
@@ -179,15 +188,17 @@ class GUARD(UniversalDefense, Surrogate):
         W = self.data.x.to(self.device) @ W.t()
         d = self.deg.clamp(min=1).to(self.device)
 
-        loader = DataLoader(victim_labels, pin_memory=False,
-                            batch_size=self.batch_size, shuffle=False)
+        loader = DataLoader(
+            victim_labels, pin_memory=False, batch_size=self.batch_size, shuffle=False
+        )
 
         w_max = W.max(1).values
-        incluence = 0.
+        incluence = 0.0
         for y in loader:
             incluence += W[:, y].sum(1)
-        incluence = (w_max - incluence / victim_labels.size(0)) / \
-            d.pow(self.alpha)  # node importance
+        incluence = (w_max - incluence / victim_labels.size(0)) / d.pow(
+            self.alpha
+        )  # node importance
         self._anchors = torch.argsort(incluence, descending=True)
         self.influence_score = incluence
         return self
@@ -219,11 +230,10 @@ class DegreeGUARD(UniversalDefense):
         perturbed_data = ... # Other PyG-like Data
         guard(perturbed_data, target_node, k=50)
     """
-    def __init__(self, data: Data, descending: bool = False,
-                 device: str = "cpu"):
+
+    def __init__(self, data: Data, descending: bool = False, device: str = "cpu"):
         super().__init__(device=device)
-        deg = degree(data.edge_index[0], num_nodes=data.num_nodes,
-                     dtype=torch.float)
+        deg = degree(data.edge_index[0], num_nodes=data.num_nodes, dtype=torch.float)
         self._anchors = torch.argsort(deg, descending=descending)
 
 
@@ -250,6 +260,7 @@ class RandomGUARD(UniversalDefense):
         perturbed_data = ... # Other PyG-like Data
         guard(perturbed_data, target_node, k=50)
     """
+
     def __init__(self, data: Data, device: str = "cpu"):
         super().__init__(device=device)
         self._anchors = torch.randperm(data.num_nodes, device=self.device)

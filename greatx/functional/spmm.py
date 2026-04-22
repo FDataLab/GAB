@@ -3,12 +3,7 @@ from typing import Union
 import torch
 from torch import Tensor
 from torch_geometric.typing import OptTensor
-from torch_geometric.utils import (
-    degree,
-    scatter,
-    sort_edge_index,
-    to_dense_batch,
-)
+from torch_geometric.utils import degree, scatter, sort_edge_index, to_dense_batch
 from torch_sparse import SparseTensor, matmul
 
 
@@ -24,8 +19,12 @@ def spmm(x, edge_index, edge_weight, reduce):
     pass
 
 
-def spmm(x: Tensor, edge_index: Union[Tensor, SparseTensor],
-         edge_weight: OptTensor = None, reduce: str = 'sum') -> Tensor:
+def spmm(
+    x: Tensor,
+    edge_index: Union[Tensor, SparseTensor],
+    edge_weight: OptTensor = None,
+    reduce: str = "sum",
+) -> Tensor:
     r"""Sparse-dense matrix multiplication.
 
     Parameters
@@ -84,19 +83,20 @@ def spmm(x: Tensor, edge_index: Union[Tensor, SparseTensor],
 
     # Case 1: `torch_sparse.SparseTensor`
     if isinstance(edge_index, SparseTensor):
-        assert reduce in ['sum', 'add', 'mean', 'min', 'max']
+        assert reduce in ["sum", "add", "mean", "min", "max"]
         return matmul(edge_index, x, reduce)
 
     # Case 2: `torch.sparse.Tensor` (Sparse) and `torch.FloatTensor` (Dense)
-    if isinstance(edge_index, Tensor) and (edge_index.is_sparse
-                                           or edge_index.dtype == torch.float):
-        assert reduce in ['sum', 'add']
+    if isinstance(edge_index, Tensor) and (
+        edge_index.is_sparse or edge_index.dtype == torch.float
+    ):
+        assert reduce in ["sum", "add"]
         return torch.sparse.mm(edge_index, x)
 
     # Case 3: `torch.LongTensor` (Sparse)
-    if reduce == 'median':
+    if reduce == "median":
         return scatter_median(x, edge_index, edge_weight)
-    elif reduce == 'sample_median':
+    elif reduce == "sample_median":
         return scatter_sample_median(x, edge_index, edge_weight)
 
     row, col = edge_index
@@ -109,8 +109,9 @@ def spmm(x: Tensor, edge_index: Union[Tensor, SparseTensor],
     return out
 
 
-def scatter_median(x: Tensor, edge_index: Tensor,
-                   edge_weight: OptTensor = None) -> Tensor:
+def scatter_median(
+    x: Tensor, edge_index: Tensor, edge_weight: OptTensor = None
+) -> Tensor:
     # NOTE: `to_dense_batch` requires the `index` is sorted by column
     ix = torch.argsort(edge_index[1])
     edge_index = edge_index[:, ix]
@@ -131,8 +132,9 @@ def scatter_median(x: Tensor, edge_index: Tensor,
     return h
 
 
-def scatter_sample_median(x: Tensor, edge_index: Tensor,
-                          edge_weight: OptTensor = None) -> Tensor:
+def scatter_sample_median(
+    x: Tensor, edge_index: Tensor, edge_weight: OptTensor = None
+) -> Tensor:
     """Approximating the median aggregation with fixed set of
     neighborhood sampling."""
 
@@ -143,11 +145,13 @@ def scatter_sample_median(x: Tensor, edge_index: Tensor,
             "`scatter_sample_median` requires glcore which "
             "is not installed, please refer to "
             "'https://github.com/EdisonLeeeee/glcore' "
-            "for more information.")
+            "for more information."
+        )
 
     if edge_weight is not None:
-        edge_index, edge_weight = sort_edge_index(edge_index, edge_weight,
-                                                  sort_by_row=False)
+        edge_index, edge_weight = sort_edge_index(
+            edge_index, edge_weight, sort_by_row=False
+        )
     else:
         edge_index = sort_edge_index(edge_index, sort_by_row=False)
 
@@ -158,8 +162,9 @@ def scatter_sample_median(x: Tensor, edge_index: Tensor,
     replace = True
     size = int(deg.float().mean().item())
     nodes = torch.arange(num_nodes)
-    targets, neighbors, e_id = neighbor_sampler_cpu(colptr.cpu(), row.cpu(),
-                                                    nodes, size, replace)
+    targets, neighbors, e_id = neighbor_sampler_cpu(
+        colptr.cpu(), row.cpu(), nodes, size, replace
+    )
 
     x_j = x[neighbors]
 
