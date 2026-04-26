@@ -3,7 +3,6 @@ model_config:
   k: 50
   purification: SVD
   threshold: 0.005
-performance: 0.7951807228915663
 split:
   idx_test:
   - 767

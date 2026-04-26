@@ -2,7 +2,6 @@ model: GCN
 model_config:
   purification: Jaccard
   threshold: 0.01
-performance: 0.8554216867469879
 split:
   idx_test:
   - 1173

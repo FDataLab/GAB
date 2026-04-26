@@ -8,7 +8,7 @@
 ![image](./doc/AGB_logo_adversarial_graph.svg)
 
 ## About the project
-AGB is a benchmarking framework for evaluating adversarial attacks and defenses on Graph Neural Networks (GNNs) under standardized and rigorous experimental settings.
+GAB is a benchmarking framework for evaluating adversarial attacks and defenses on Graph Neural Networks (GNNs) under standardized and rigorous experimental settings.
 
 Our goal is to eliminate inconsistencies in prior evaluations by providing a unified framework that enables fair comparison across methods. We systematically re-evaluate widely used attacks and defenses under both poisoning and evasion scenarios across multiple graph datasets, revealing critical factors that significantly impact reported performance.
 

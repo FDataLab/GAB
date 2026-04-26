@@ -7,7 +7,6 @@ model_config:
   r: 500
   use_feature: true
   weighted_knn: true
-performance: 0.8808316430020284
 split:
   idx_test: &id001
   - 1588

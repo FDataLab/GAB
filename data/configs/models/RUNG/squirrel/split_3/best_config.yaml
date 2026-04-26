@@ -10,7 +10,6 @@ model_config:
   num_layers: 4
   optimizer: ADAM
   patience: 50
-performance: 0.3683894230769231
 split:
   idx_test:
   - 0
