@@ -12,7 +12,6 @@ model_config:
   patience: 50
   propa_step_k: 10
   weight_decay: 5.0e-06
-performance: 0.8899594320486816
 split:
   idx_test:
   - 88

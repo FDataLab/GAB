@@ -3,12 +3,11 @@ model_config:
   drop_out: 0.6
   hidden_unit: 64
   lr: 0.001
-  model: GCORN
+  model: GCORNgit 
   num_epochs: 1000
   num_layers: 2
   optimizer: ADAM
   patience: 50
-performance: 0.22295673076923078
 split:
   idx_test:
   - 3

@@ -2,7 +2,6 @@ model: GSAGE
 model_config:
   purification: Jaccard
   threshold: 0.01
-performance: 0.7911646586345381
 split:
   idx_test:
   - 1987
