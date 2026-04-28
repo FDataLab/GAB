@@ -16,6 +16,7 @@ from torch_geometric.data import Data
 from evaluation.ModelSupervisor import ModelSupervisor
 from greatx.attack.attacker import Attacker
 from static import *
+from utility.util import logger
 
 
 class AdversarialSupervisor:
@@ -146,6 +147,7 @@ class AdversarialSupervisor:
                     )
                     self.gpu_mem_usage_list.append(gpu_mem_alloc)
                 except Exception as e:
+                    logger.error(f"Fail to perform attack due to:{e}")
                     duration = timeit.default_timer() - start_attack
                     total += duration
                     counter += 1
