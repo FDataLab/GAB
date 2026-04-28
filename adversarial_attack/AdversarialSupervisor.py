@@ -19,7 +19,6 @@ from static import *
 from utility.util import logger
 
 
-
 class AdversarialSupervisor:
     r"""
     Given an adversarial method, perform target attack in either evasion or poison setting or both on victim model.
