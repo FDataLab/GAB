@@ -4,6 +4,10 @@ aggr:
 num_layers:
   - 2
   - 3
+initializer:
+  - "xavier_normal"
+  - "kaiming_normal"
+  - "orthogonal"
 hidden_unit:
   - 32
   - 64
