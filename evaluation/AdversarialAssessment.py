@@ -239,7 +239,7 @@ class AdversarialAssessment:
             return "SGC"
         elif attack_method in [NETTACK_NAME, FGA_NAME, PGDATTACK_NAME, GOTTACK]:
             return "GCN_surrogate"
-        elif attack_method is PRBCD_NAME:
+        elif attack_method == PRBCD_NAME:
             return "GCN"
         return None
 

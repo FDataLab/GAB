@@ -14,6 +14,7 @@ build/
 
 #Data folder
 data/dataset/
+data/pred_cache/
 data/figs/
 utility/data
 
