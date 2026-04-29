@@ -2,7 +2,8 @@ model_config:
   aggr: mean
   batch_size: 32
   drop_out: 0.5
-  hidden_unit: 64
+  hidden_unit: 32
+  initializer: kaiming_normal
   lr: 0.1
   model: GCN
   num_epochs: 1000

@@ -1,8 +1,9 @@
 model_config:
   aggr: mean
-  drop_out: 0.5
-  hidden_unit: 32
-  lr: 0.01
+  drop_out: 0.6
+  hidden_unit: 128
+  initializer: xavier_normal
+  lr: 0.005
   model: GNNGuard
   num_epochs: 1000
   num_layers: 2

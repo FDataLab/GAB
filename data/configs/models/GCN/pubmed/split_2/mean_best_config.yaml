@@ -1,8 +1,9 @@
 model_config:
   aggr: mean
-  batch_size: 32
-  drop_out: 0.5
+  batch_size: 128
+  drop_out: 0.6
   hidden_unit: 128
+  initializer: orthogonal
   lr: 0.01
   model: GCN
   num_epochs: 1000

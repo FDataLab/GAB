@@ -1,12 +1,13 @@
 model_config:
   aggr: max
   batch_size: 32
-  drop_out: 0.7
-  hidden_unit: 32
-  lr: 0.1
+  drop_out: 0.5
+  hidden_unit: 64
+  initializer: orthogonal
+  lr: 0.01
   model: GCN
   num_epochs: 1000
-  num_layers: 2
+  num_layers: 3
   optimizer: ADAM
   patience: 50
   weight_decay: 0.0005

@@ -1,7 +1,8 @@
 model_config:
   aggr: mean
-  drop_out: 0.5
-  hidden_unit: 64
+  drop_out: 0.6
+  hidden_unit: 32
+  initializer: orthogonal
   lr: 0.01
   model: GNNGuard
   num_epochs: 1000

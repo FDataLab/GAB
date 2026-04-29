@@ -1,8 +1,9 @@
 model_config:
   aggr: max
   batch_size: 32
-  drop_out: 0.7
+  drop_out: 0.5
   hidden_unit: 32
+  initializer: xavier_normal
   lr: 0.1
   model: GCN
   num_epochs: 1000

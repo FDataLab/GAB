@@ -1,8 +1,9 @@
 model_config:
   aggr: sum
-  batch_size: 64
-  drop_out: 0.7
-  hidden_unit: 128
+  batch_size: 32
+  drop_out: 0.6
+  hidden_unit: 64
+  initializer: xavier_normal
   lr: 0.1
   model: GCN
   num_epochs: 1000

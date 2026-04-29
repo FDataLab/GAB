@@ -25,6 +25,8 @@ from defense_model.improving_graph.GARNET.garnet import GarnetPurification
 from defense_model.improving_training import Noisy_GCN
 from defense_model.improving_training.GRAND.grand import GRAND
 from static import *
+from .initializer import apply_weight_init
+
 from utility.util import logger
 
 
@@ -192,8 +194,10 @@ def load_model(in_channel: int, out_channel: int, degree_dist: torch.Tensor, **k
         )
 
     else:
-        raise Exception("Unsupport or undefined model{}".format(model_name))
-    logger.info("Using models {} ".format(model_name))
+        raise Exception('Unsupport or undefined model{}'.format(model_name))
+    logger.info('Using models {} '.format(model_name))
+    weight_init = kwargs.get("initializer")  # e.g. "kaiming_normal"
+    apply_weight_init(model, weight_init)
     return model
 
 
