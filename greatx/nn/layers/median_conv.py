@@ -40,13 +40,20 @@ class MedianConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.MedianGCN`
     """
-    def __init__(self, in_channels: int, out_channels: int,
-                 reduce: str = 'median', add_self_loops: bool = True,
-                 normalize: bool = False, bias: bool = True):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        reduce: str = "median",
+        add_self_loops: bool = True,
+        normalize: bool = False,
+        bias: bool = True,
+    ):
 
         super().__init__()
 
-        assert reduce in ('median', 'sample_median')
+        assert reduce in ("median", "sample_median")
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -54,13 +61,14 @@ class MedianConv(nn.Module):
         self.normalize = normalize
         self.reduce = reduce
 
-        self.lin = Linear(in_channels, out_channels, bias=False,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels, out_channels, bias=False, weight_initializer="glorot"
+        )
 
         if bias:
             self.bias = nn.Parameter(torch.Tensor(out_channels))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
         self.reset_parameters()
 
@@ -68,8 +76,9 @@ class MedianConv(nn.Module):
         self.lin.reset_parameters()
         zeros(self.bias)
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         x = self.lin(x)
@@ -80,14 +89,17 @@ class MedianConv(nn.Module):
             edge_index = torch.stack([row, col], dim=0)
 
         if self.add_self_loops:
-            edge_index, edge_weight = add_self_loops(edge_index,
-                                                     num_nodes=x.size(0))
+            edge_index, edge_weight = add_self_loops(edge_index, num_nodes=x.size(0))
 
         if self.normalize:
-            edge_index, edge_weight = gcn_norm(edge_index, edge_weight,
-                                               x.size(0), improved=False,
-                                               add_self_loops=False,
-                                               dtype=x.dtype)
+            edge_index, edge_weight = gcn_norm(
+                edge_index,
+                edge_weight,
+                x.size(0),
+                improved=False,
+                add_self_loops=False,
+                dtype=x.dtype,
+            )
 
         out = spmm(x, edge_index, edge_weight, reduce=self.reduce)
 
@@ -97,5 +109,4 @@ class MedianConv(nn.Module):
         return out
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels})')
+        return f"{self.__class__.__name__}({self.in_channels}, " f"{self.out_channels})"

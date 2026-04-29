@@ -30,6 +30,7 @@ class SATTrainer(Trainer):
     * :obj:`lambda_V`: trade-off parameters for eigenvalues-specific loss
 
     """
+
     def train_step(self, data: Data, mask: Optional[Tensor] = None) -> dict:
         """One-step training on the inputs.
 
@@ -84,11 +85,9 @@ class SATTrainer(Trainer):
             out_U = out_U[mask]
             out_V = out_V[mask]
 
-        loss += lamb_U * \
-            F.cross_entropy(out_U, y) + lamb_V * F.cross_entropy(out_V, y)
+        loss += lamb_U * F.cross_entropy(out_U, y) + lamb_V * F.cross_entropy(out_V, y)
         # ===============================================================
 
         loss.backward()
         self.callbacks.on_train_batch_end(0)
-        return dict(loss=loss.item(),
-                    acc=out.argmax(1).eq(y).float().mean().item())
+        return dict(loss=loss.item(), acc=out.argmax(1).eq(y).float().mean().item())

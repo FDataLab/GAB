@@ -5,10 +5,14 @@ import torch
 from torch import Tensor
 
 
-def normalize(feat: Tensor, norm: str = "standardize",
-              dim: Optional[int] = None,
-              lim_min: float = -1.0, lim_max: float = 1.0) -> Tensor:
-    """Feature normalization function. 
+def normalize(
+    feat: Tensor,
+    norm: str = "standardize",
+    dim: Optional[int] = None,
+    lim_min: float = -1.0,
+    lim_max: float = 1.0,
+) -> Tensor:
+    """Feature normalization function.
 
     Adapted from GRB:
     https://github.com/THUDM/grb/blob/master/grb/dataset/dataset.py#L638
@@ -19,11 +23,11 @@ def normalize(feat: Tensor, norm: str = "standardize",
         node feature matrix with shape [N, D]
     norm : Optional[str], optional
         how to normalize feature matrix, including
-        ["linearize", "arctan", "tanh", "standardize", "none"], 
+        ["linearize", "arctan", "tanh", "standardize", "none"],
         by default "standardize"
     dim : None or int, optional
-        Axis along which the means or standard deviations 
-        are computed. The default is to compute the mean or 
+        Axis along which the means or standard deviations
+        are computed. The default is to compute the mean or
         standard deviations of the flattened array, by default None
     lim_min : float, optional
         minimum limit of feature, by default -1.0
@@ -36,10 +40,12 @@ def normalize(feat: Tensor, norm: str = "standardize",
         normalized feature matrix
     """
     if norm not in ("linearize", "arctan", "tanh", "standardize", "none"):
-        raise ValueError('Invalid norm value. Must be either "linearize", "arctan", "tanh", "standardize" or "none".'
-                         ' But got "{}".'.format(norm))
+        raise ValueError(
+            'Invalid norm value. Must be either "linearize", "arctan", "tanh", "standardize" or "none".'
+            ' But got "{}".'.format(norm)
+        )
 
-    if norm == 'none':
+    if norm == "none":
         return feat
 
     if norm == "linearize":

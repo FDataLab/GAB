@@ -14,7 +14,6 @@ model_config:
     gamma: 0.5
     step_size: 50
   weight_decay: 0.0001
-performance: 0.23557692307692307
 split:
   idx_test:
   - 0

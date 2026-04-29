@@ -13,24 +13,26 @@ def project(num_budgets: int, values: Tensor, eps: float = 1e-7) -> Tensor:
     return torch.clamp(values, min=eps, max=1 - eps)
 
 
-def bisection(edge_weight: Tensor, a: float, b: float, n_pert: int, eps=1e-5,
-              max_iter=1e3) -> Tensor:
+def bisection(
+    edge_weight: Tensor, a: float, b: float, n_pert: int, eps=1e-5, max_iter=1e3
+) -> Tensor:
     """Bisection search for projection."""
+
     def shift(offset: float):
-        return (torch.clamp(edge_weight - offset, 0, 1).sum() - n_pert)
+        return torch.clamp(edge_weight - offset, 0, 1).sum() - n_pert
 
     miu = a
     for _ in range(int(max_iter)):
         miu = (a + b) / 2
         # Check if middle point is root
-        if (shift(miu) == 0.0):
+        if shift(miu) == 0.0:
             break
         # Decide the side to repeat the steps
-        if (shift(miu) * shift(a) < 0):
+        if shift(miu) * shift(a) < 0:
             b = miu
         else:
             a = miu
-        if ((b - a) <= eps):
+        if (b - a) <= eps:
             break
     return miu
 
@@ -49,15 +51,23 @@ def linear_to_triu_idx(n: int, lin_idx: Tensor) -> Tensor:
     https://stackoverflow.com/questions/242711/algorithm-for-index-numbers-of-triangular-matrix-coefficients/28116498#28116498
     with number nodes decremented and col index incremented by one."""
     nn = n * (n - 1)
-    row_idx = n - 2 - torch.floor(
-        torch.sqrt(-8 * lin_idx.double() + 4 * nn - 7) / 2.0 - 0.5).long()
-    col_idx = 1 + lin_idx + row_idx - nn // 2 + torch.div(
-        (n - row_idx) * (n - row_idx - 1), 2, rounding_mode='floor')
+    row_idx = (
+        n
+        - 2
+        - torch.floor(torch.sqrt(-8 * lin_idx.double() + 4 * nn - 7) / 2.0 - 0.5).long()
+    )
+    col_idx = (
+        1
+        + lin_idx
+        + row_idx
+        - nn // 2
+        + torch.div((n - row_idx) * (n - row_idx - 1), 2, rounding_mode="floor")
+    )
     return torch.stack((row_idx, col_idx))
 
 
 def linear_to_full_idx(n: int, lin_idx: Tensor) -> Tensor:
     """Linear index to dense matrix including diagonal."""
-    row_idx = torch.div(lin_idx, n, rounding_mode='floor')
+    row_idx = torch.div(lin_idx, n, rounding_mode="floor")
     col_idx = lin_idx % n
     return torch.stack((row_idx, col_idx))

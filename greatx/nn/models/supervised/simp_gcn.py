@@ -53,6 +53,7 @@ class SimPGCN(nn.Module):
     >>> model = SimPGCN(100, 10, hids=[16]*8, acts=['elu'])
 
     """
+
     @wrapper
     def __init__(
         self,
@@ -161,8 +162,11 @@ class SimPGCN(nn.Module):
             # layer.add_self_loops = add_self_loops
 
             # taken together
-            x = s * act(layer(x, edge_index, edge_weight)) + (1 - s) * \
-                act(tmp_knn) + gamma * Dk * act(tmp)
+            x = (
+                s * act(layer(x, edge_index, edge_weight))
+                + (1 - s) * act(tmp_knn)
+                + gamma * Dk * act(tmp)
+            )
 
             if ix < len(self.layers) - 1:
                 x = self.dropout(x)
@@ -180,27 +184,25 @@ class SimPGCN(nn.Module):
         node_pairs = self._node_pairs
         pseudo_labels = self._pseudo_labels
         if len(node_pairs[0]) > K:
-            prob = torch.full((len(node_pairs[0]), ), 1. / len(node_pairs[0]))
+            prob = torch.full((len(node_pairs[0]),), 1.0 / len(node_pairs[0]))
             sampled = prob.multinomial(num_samples=K, replacement=False)
 
             embeddings0 = embeddings[node_pairs[0][sampled]]
             embeddings1 = embeddings[node_pairs[1][sampled]]
             embeddings = self.linear(torch.abs(embeddings0 - embeddings1))
-            loss = F.mse_loss(embeddings, pseudo_labels[sampled].unsqueeze(-1),
-                              reduction='mean')
+            loss = F.mse_loss(
+                embeddings, pseudo_labels[sampled].unsqueeze(-1), reduction="mean"
+            )
         else:
             embeddings0 = embeddings[node_pairs[0]]
             embeddings1 = embeddings[node_pairs[1]]
             embeddings = self.linear(torch.abs(embeddings0 - embeddings1))
-            loss = F.mse_loss(embeddings, pseudo_labels.unsqueeze(-1),
-                              reduction='mean')
+            loss = F.mse_loss(embeddings, pseudo_labels.unsqueeze(-1), reduction="mean")
         return self.lambda_ * loss
 
 
 def knn_graph(x: torch.Tensor, k: int = 20) -> SparseTensor:
-    """Return a K-NN graph based on cosine similarity.
-
-    """
+    """Return a K-NN graph based on cosine similarity."""
     x = x.bool().float()  # x[x!=0] = 1
     sims = pairwise_cosine_similarity(x)
     sims = sims - torch.diag(torch.diag(sims))  # remove self-loops
@@ -212,14 +214,14 @@ def knn_graph(x: torch.Tensor, k: int = 20) -> SparseTensor:
     edge_weight = topk.values.flatten()
 
     N = x.size(0)
-    adj = SparseTensor.from_edge_index(edge_index, edge_weight,
-                                       sparse_sizes=(N, N))
+    adj = SparseTensor.from_edge_index(edge_index, edge_weight, sparse_sizes=(N, N))
 
     return adj
 
 
 def pairwise_cosine_similarity(
-        X: torch.Tensor, Y: Optional[torch.Tensor] = None) -> torch.Tensor:
+    X: torch.Tensor, Y: Optional[torch.Tensor] = None
+) -> torch.Tensor:
     """Compute cosine similarity between samples in X and Y.
 
     Cosine similarity, or the cosine kernel, computes similarity as the
@@ -258,10 +260,8 @@ def attr_sim(x, k=5):
 
     sims = pairwise_cosine_similarity(x)
     indices_sorted = sims.argsort(1)
-    selected = torch.cat((indices_sorted[:, :k], indices_sorted[:, -k - 1:]),
-                         dim=1)
-    row = torch.arange(x.size(0),
-                       device=x.device).repeat_interleave(selected.size(1))
+    selected = torch.cat((indices_sorted[:, :k], indices_sorted[:, -k - 1 :]), dim=1)
+    row = torch.arange(x.size(0), device=x.device).repeat_interleave(selected.size(1))
     col = selected.view(-1)
 
     mask = row != col

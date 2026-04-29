@@ -40,9 +40,16 @@ class TAGConv(nn.Module):
     :class:`greatx.nn.models.supervised.TAGCN`
 
     """
-    def __init__(self, in_channels: int, out_channels: int, K: int = 2,
-                 add_self_loops: bool = True, normalize: bool = True,
-                 bias: bool = True):
+
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        K: int = 2,
+        add_self_loops: bool = True,
+        normalize: bool = True,
+        bias: bool = True,
+    ):
         super().__init__()
 
         self.in_channels = in_channels
@@ -51,27 +58,33 @@ class TAGConv(nn.Module):
         self.add_self_loops = add_self_loops
         self.normalize = normalize
 
-        self.lin = Linear(in_channels * (K + 1), out_channels, bias=bias,
-                          weight_initializer='glorot')
+        self.lin = Linear(
+            in_channels * (K + 1), out_channels, bias=bias, weight_initializer="glorot"
+        )
 
         self.reset_parameters()
 
     def reset_parameters(self):
         self.lin.reset_parameters()
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         if self.add_self_loops:
-            edge_index, edge_weight = make_self_loops(edge_index, edge_weight,
-                                                      num_nodes=x.size(0))
+            edge_index, edge_weight = make_self_loops(
+                edge_index, edge_weight, num_nodes=x.size(0)
+            )
 
         if self.normalize:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=x.size(0),
-                                                    dtype=x.dtype,
-                                                    add_self_loops=False)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=x.size(0),
+                dtype=x.dtype,
+                add_self_loops=False,
+            )
 
         xs = [x]
         for k in range(self.K):
@@ -83,5 +96,7 @@ class TAGConv(nn.Module):
         return self.lin(xs)
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels}, K={self.K})')
+        return (
+            f"{self.__class__.__name__}({self.in_channels}, "
+            f"{self.out_channels}, K={self.K})"
+        )

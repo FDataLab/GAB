@@ -56,13 +56,14 @@ class RobustGCN(nn.Module):
     :class:`greatx.nn.layers.RobustConv`
 
     """
+
     @wrapper
     def __init__(
         self,
         in_channels: int,
         out_channels: int,
         hids: List[int] = [32],
-        acts: List[str] = ['relu'],
+        acts: List[str] = ["relu"],
         dropout: float = 0.5,
         bias: bool = True,
         gamma: float = 1.0,
@@ -86,8 +87,7 @@ class RobustGCN(nn.Module):
             conv2.append(activations.get(act))
             in_channels = hid
 
-        conv2.append(
-            RobustConv(in_channels, out_channels, gamma=gamma, bias=bias))
+        conv2.append(RobustConv(in_channels, out_channels, gamma=gamma, bias=bias))
         self.conv2 = conv2
         self.kl = kl
         self.dropout = nn.Dropout(dropout)
@@ -126,5 +126,6 @@ class RobustGCN(nn.Module):
     def loss(self, *args):
         mean, var = self.mean, self.var
         kl_loss = -0.5 * torch.sum(
-            torch.mean(1 + torch.log(var + 1e-8) - mean.pow(2) + var, dim=1))
+            torch.mean(1 + torch.log(var + 1e-8) - mean.pow(2) + var, dim=1)
+        )
         return self.kl * kl_loss

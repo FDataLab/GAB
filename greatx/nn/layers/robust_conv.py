@@ -43,6 +43,7 @@ class RobustConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.RobustGCN`
     """
+
     def __init__(
         self,
         in_channels: int,
@@ -61,17 +62,19 @@ class RobustConv(nn.Module):
         self.gamma = gamma
         self.normalize = normalize
 
-        self.lin_mean = Linear(in_channels, out_channels, bias=False,
-                               weight_initializer='glorot')
+        self.lin_mean = Linear(
+            in_channels, out_channels, bias=False, weight_initializer="glorot"
+        )
 
-        self.lin_var = Linear(in_channels, out_channels, bias=False,
-                              weight_initializer='glorot')
+        self.lin_var = Linear(
+            in_channels, out_channels, bias=False, weight_initializer="glorot"
+        )
         if bias:
             self.bias_mean = nn.Parameter(torch.Tensor(out_channels))
             self.bias_var = nn.Parameter(torch.Tensor(out_channels))
         else:
-            self.register_parameter('bias_mean', None)
-            self.register_parameter('bias_var', None)
+            self.register_parameter("bias_mean", None)
+            self.register_parameter("bias_var", None)
 
         self.reset_parameters()
 
@@ -81,8 +84,12 @@ class RobustConv(nn.Module):
         zeros(self.bias_mean)
         zeros(self.bias_var)
 
-    def forward(self, x: Union[Tensor, OptPairTensor], edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self,
+        x: Union[Tensor, OptPairTensor],
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+    ) -> Tensor:
         """"""
 
         if isinstance(x, Tensor):
@@ -101,14 +108,18 @@ class RobustConv(nn.Module):
         var = F.relu(var)
 
         if self.add_self_loops:
-            edge_index, edge_weight = make_self_loops(edge_index, edge_weight,
-                                                      num_nodes=mean.size(0))
+            edge_index, edge_weight = make_self_loops(
+                edge_index, edge_weight, num_nodes=mean.size(0)
+            )
 
         if self.normalize:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=mean.size(0),
-                                                    dtype=mean.dtype,
-                                                    add_self_loops=False)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=mean.size(0),
+                dtype=mean.dtype,
+                add_self_loops=False,
+            )
 
         attention = torch.exp(-self.gamma * var)
         mean = mean * attention
@@ -127,5 +138,4 @@ class RobustConv(nn.Module):
         return mean, var
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
-                f'{self.out_channels})')
+        return f"{self.__class__.__name__}({self.in_channels}, " f"{self.out_channels})"

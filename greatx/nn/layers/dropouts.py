@@ -39,6 +39,7 @@ class DropEdge(nn.Module):
     --------
     :class:`greatx.functional.drop_edge`
     """
+
     def __init__(self, p: float = 0.5):
         super().__init__()
         self.p = p
@@ -49,8 +50,7 @@ class DropEdge(nn.Module):
         edge_weight: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """"""
-        return drop_edge(edge_index, edge_weight, self.p,
-                         training=self.training)
+        return drop_edge(edge_index, edge_weight, self.p, training=self.training)
 
 
 class DropNode(nn.Module):
@@ -81,6 +81,7 @@ class DropNode(nn.Module):
     --------
     :class:`greatx.functional.drop_node`
     """
+
     def __init__(self, p: float = 0.5):
         super().__init__()
         self.p = p
@@ -91,8 +92,7 @@ class DropNode(nn.Module):
         edge_weight: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """"""
-        return drop_node(edge_index, edge_weight, self.p,
-                         training=self.training)
+        return drop_node(edge_index, edge_weight, self.p, training=self.training)
 
 
 class DropPath(nn.Module):
@@ -151,9 +151,16 @@ class DropPath(nn.Module):
     --------
     :class:`greatx.functional.drop_path`
     """
-    def __init__(self, p: float = 0.5, walks_per_node: int = 1,
-                 walk_length: int = 3, num_nodes: Optional[int] = None,
-                 start: str = 'node', is_sorted: bool = False):
+
+    def __init__(
+        self,
+        p: float = 0.5,
+        walks_per_node: int = 1,
+        walk_length: int = 3,
+        num_nodes: Optional[int] = None,
+        start: str = "node",
+        is_sorted: bool = False,
+    ):
         super().__init__()
         self.p = p
         self.walks_per_node = walks_per_node
@@ -168,8 +175,13 @@ class DropPath(nn.Module):
         edge_weight: Optional[Tensor] = None,
     ) -> Tuple[Tensor, Optional[Tensor]]:
         """"""
-        return drop_path(edge_index, edge_weight, p=self.p,
-                         walks_per_node=self.walks_per_node,
-                         walk_length=self.walk_length,
-                         num_nodes=self.num_nodes, start=self.start,
-                         training=self.training)
+        return drop_path(
+            edge_index,
+            edge_weight,
+            p=self.p,
+            walks_per_node=self.walks_per_node,
+            walk_length=self.walk_length,
+            num_nodes=self.num_nodes,
+            start=self.start,
+            training=self.training,
+        )

@@ -46,13 +46,19 @@ class RandomInjection(InjectionAttacker):
     * Please remember to call :meth:`reset` before each attack.
 
     """
-    def attack(self, num_budgets: Union[int, float], *,
-               targets: Optional[Tensor] = None, interconnection: bool = False,
-               num_edges_global: Optional[int] = None,
-               num_edges_local: Optional[int] = None,
-               feat_limits: Optional[Union[tuple, dict]] = None,
-               feat_budgets: Optional[int] = None,
-               disable: bool = False) -> "RandomInjection":
+
+    def attack(
+        self,
+        num_budgets: Union[int, float],
+        *,
+        targets: Optional[Tensor] = None,
+        interconnection: bool = False,
+        num_edges_global: Optional[int] = None,
+        num_edges_local: Optional[int] = None,
+        feat_limits: Optional[Union[tuple, dict]] = None,
+        feat_budgets: Optional[int] = None,
+        disable: bool = False
+    ) -> "RandomInjection":
         """Base method that describes the adversarial injection attack
 
         Parameters
@@ -93,18 +99,25 @@ class RandomInjection(InjectionAttacker):
         * Both `num_edges_local` and `num_edges_global` cannot be used simultaneously. # noqa
         * Both `feat_limits` and `feat_budgets` cannot be used simultaneously.
         """
-        super().attack(num_budgets, targets=targets,
-                       num_edges_global=num_edges_global,
-                       num_edges_local=num_edges_local,
-                       feat_limits=feat_limits, feat_budgets=feat_budgets)
+        super().attack(
+            num_budgets,
+            targets=targets,
+            num_edges_global=num_edges_global,
+            num_edges_local=num_edges_local,
+            feat_limits=feat_limits,
+            feat_budgets=feat_budgets,
+        )
 
         candidate_nodes = self.targets.tolist()
 
         for injected_node in tqdm(
-                range(self.num_nodes, self.num_nodes + self.num_budgets),
-                desc="Injecting nodes...", disable=disable):
-            sampled = np.random.choice(candidate_nodes, self.num_edges_local,
-                                       replace=False)
+            range(self.num_nodes, self.num_nodes + self.num_budgets),
+            desc="Injecting nodes...",
+            disable=disable,
+        ):
+            sampled = np.random.choice(
+                candidate_nodes, self.num_edges_local, replace=False
+            )
 
             self.inject_node(injected_node)
             self.inject_feat()

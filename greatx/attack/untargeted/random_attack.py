@@ -55,20 +55,31 @@ class RandomAttack(UntargetedAttacker):
     ----
     * Please remember to call :meth:`reset` before each attack.
     """
-    def attack(self, num_budgets=0.05, *, threshold=0.5, structure_attack=True,
-               feature_attack=False, disable=False):
 
-        super().attack(num_budgets=num_budgets,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+    def attack(
+        self,
+        num_budgets=0.05,
+        *,
+        threshold=0.5,
+        structure_attack=True,
+        feature_attack=False,
+        disable=False
+    ):
+
+        super().attack(
+            num_budgets=num_budgets,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
         assert 0 < threshold < 1
-        random_arr = np.random.choice(2, self.num_budgets,
-                                      p=[1 - threshold, threshold]) * 2 - 1
+        random_arr = (
+            np.random.choice(2, self.num_budgets, p=[1 - threshold, threshold]) * 2 - 1
+        )
 
         influence_nodes = list(self.nodes_set)
-        for it, remove_or_insert in tqdm(enumerate(random_arr),
-                                         desc='Peturbing graph...',
-                                         disable=disable):
+        for it, remove_or_insert in tqdm(
+            enumerate(random_arr), desc="Peturbing graph...", disable=disable
+        ):
             # randomly choose to add or remove edges
             if remove_or_insert > 0:
                 edge = self.get_added_edge(influence_nodes)

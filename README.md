@@ -1,7 +1,24 @@
+
+
 <div align="center">
 <h3 style="font-size: 22px">Adversarial Graph Neural Network Benchmarks<br> Towards Practical and Fair Evaluation</h3>
-<img src="./doc/AGB_logo_adversarial_graph.svg" width="80%"/>
+<!-- <img src="./doc/AGB_logo_adversarial_graph.svg" width="80%"/> -->
 </div>
+
+![image](./doc/AGB_logo_adversarial_graph.svg)
+
+## About the project
+GAB is a benchmarking framework for evaluating adversarial attacks and defenses on Graph Neural Networks (GNNs) under standardized and rigorous experimental settings.
+
+Our goal is to eliminate inconsistencies in prior evaluations by providing a unified framework that enables fair comparison across methods. We systematically re-evaluate widely used attacks and defenses under both poisoning and evasion scenarios across multiple graph datasets, revealing critical factors that significantly impact reported performance.
+
+### Benchmarking Framework Highlights
+
+- 🧪 Unified benchmark for adversarial GNN evaluation across diverse settings  
+- 📊 Comprehensive study covering attacks, defenses, and multiple datasets  
+- 🔍 Reveals hidden factors (e.g., node selection, training procedures) affecting robustness  
+- ⚖️ Standardized protocols for fair and reproducible comparisons  
+- 🚀 Scalable experimental pipeline (400K+ runs) for robust analysis
 
 
 **To setup the environment, please check out [setup.md](doc/Set%20up.md)**

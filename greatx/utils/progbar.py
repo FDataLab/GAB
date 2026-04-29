@@ -40,8 +40,15 @@ class Progbar:
     5/5 [===============] - Total: 3.22ms - 643us/step- current number 4
 
     """
-    def __init__(self, target: int, width: int = 20, verbose: int = 1,
-                 interval: float = 0.05, unit_name: str = 'step'):
+
+    def __init__(
+        self,
+        target: int,
+        width: int = 20,
+        verbose: int = 1,
+        interval: float = 0.05,
+        unit_name: str = "step",
+    ):
 
         self.target = target
         self.width = width
@@ -49,19 +56,23 @@ class Progbar:
         self.interval = interval
         self.unit_name = unit_name
 
-        self._dynamic_display = ((hasattr(sys.stdout, 'isatty')
-                                  and sys.stdout.isatty())
-                                 or 'ipykernel' in sys.modules
-                                 or 'posix' in sys.modules
-                                 or 'PYCHARM_HOSTED' in os.environ)
+        self._dynamic_display = (
+            (hasattr(sys.stdout, "isatty") and sys.stdout.isatty())
+            or "ipykernel" in sys.modules
+            or "posix" in sys.modules
+            or "PYCHARM_HOSTED" in os.environ
+        )
         self._total_width = 0
         self._seen_so_far = 0
         self._start = time.perf_counter()
         self._last_update = 0
 
-    def update(self, current: int, msg: Optional[Union[str, List,
-                                                       Tuple]] = None,
-               finalize: Optional[bool] = None):
+    def update(
+        self,
+        current: int,
+        msg: Optional[Union[str, List, Tuple]] = None,
+        finalize: Optional[bool] = None,
+    ):
         """Updates the progress bar using current value.
 
 
@@ -94,21 +105,21 @@ class Progbar:
         msg = msg or {}
 
         if isinstance(msg, str):
-            message = ' - ' + msg
+            message = " - " + msg
         elif isinstance(msg, (dict, list, tuple)):
-            message = ''
+            message = ""
             if isinstance(msg, dict):
                 msg = msg.items()
             else:
                 assert len(msg[0]) == 2
             for k, v in msg:
-                message += ' - %s:' % k
+                message += " - %s:" % k
                 if v is None:
-                    message += ' None'
+                    message += " None"
                 elif isinstance(v, str):
-                    message += ' ' + v
+                    message += " " + v
                 else:
-                    message += ' ' + self.format_num(v)
+                    message += " " + self.format_num(v)
         else:
             raise ValueError(msg)
 
@@ -120,39 +131,38 @@ class Progbar:
         delta = now - self._start
 
         if delta >= 1:
-            delta = ' %.2fs' % delta
+            delta = " %.2fs" % delta
         elif delta >= 1e-3:
-            delta = ' %.2fms' % (delta * 1e3)
+            delta = " %.2fms" % (delta * 1e3)
         else:
-            delta = ' %.2fus' % (delta * 1e6)
-        info = ' - Total:%s' % delta
+            delta = " %.2fus" % (delta * 1e6)
+        info = " - Total:%s" % delta
         if self.verbose == 1:
             if now - self._last_update < self.interval and not finalize:
                 return
-            info += ' -'
+            info += " -"
             prev_total_width = self._total_width
             if self._dynamic_display:
-                sys.stdout.write('\b' * prev_total_width)
-                sys.stdout.write('\r')
+                sys.stdout.write("\b" * prev_total_width)
+                sys.stdout.write("\r")
             else:
-                sys.stdout.write('\n')
+                sys.stdout.write("\n")
 
             if self.target is not None:
                 numdigits = int(np.log10(self.target)) + 1
-                bar = ('%' + str(numdigits) + 'd/%d [') % (current,
-                                                           self.target)
+                bar = ("%" + str(numdigits) + "d/%d [") % (current, self.target)
                 prog = float(current) / self.target
                 prog_width = int(self.width * prog)
                 if prog_width > 0:
-                    bar += ('=' * (prog_width - 1))
+                    bar += "=" * (prog_width - 1)
                     if current < self.target:
-                        bar += '>'
+                        bar += ">"
                     else:
-                        bar += '='
-                bar += ('.' * (self.width - prog_width))
-                bar += ']'
+                        bar += "="
+                bar += "." * (self.width - prog_width)
+                bar += "]"
             else:
-                bar = '%7d/Unknown' % current
+                bar = "%7d/Unknown" % current
 
             self._total_width = len(bar)
 
@@ -163,43 +173,44 @@ class Progbar:
 
             if self.target is None or finalize:
                 if time_per_unit >= 1 or time_per_unit == 0:
-                    info += ' %ds/%s' % (time_per_unit, self.unit_name)
+                    info += " %ds/%s" % (time_per_unit, self.unit_name)
                 elif time_per_unit >= 1e-3:
-                    info += ' %dms/%s' % (time_per_unit * 1e3, self.unit_name)
+                    info += " %dms/%s" % (time_per_unit * 1e3, self.unit_name)
                 else:
-                    info += ' %dus/%s' % (time_per_unit * 1e6, self.unit_name)
+                    info += " %dus/%s" % (time_per_unit * 1e6, self.unit_name)
             else:
                 eta = time_per_unit * (self.target - current)
                 if eta > 3600:
-                    eta_format = '%d:%02d:%02d' % (eta // 3600,
-                                                   (eta % 3600) // 60,
-                                                   eta % 60)
+                    eta_format = "%d:%02d:%02d" % (
+                        eta // 3600,
+                        (eta % 3600) // 60,
+                        eta % 60,
+                    )
                 elif eta > 60:
-                    eta_format = '%d:%02d' % (eta // 60, eta % 60)
+                    eta_format = "%d:%02d" % (eta // 60, eta % 60)
                 else:
-                    eta_format = '%ds' % eta
+                    eta_format = "%ds" % eta
 
-                info = ' - ETA: %s' % eta_format
+                info = " - ETA: %s" % eta_format
 
             info += message
 
             self._total_width += len(info)
             if prev_total_width > self._total_width:
-                info += (' ' * (prev_total_width - self._total_width))
+                info += " " * (prev_total_width - self._total_width)
 
             if finalize:
-                info += '\n'
-            sys.stdout.write(f'{bar}{info}')
+                info += "\n"
+            sys.stdout.write(f"{bar}{info}")
             sys.stdout.flush()
 
         elif self.verbose == 2:
             if finalize:
                 numdigits = int(np.log10(self.target)) + 1
-                count = ('%' + str(numdigits) + 'd/%d') % (current,
-                                                           self.target)
+                count = ("%" + str(numdigits) + "d/%d") % (current, self.target)
                 info = count + info
                 info += message
-                info += '\n'
+                info += "\n"
                 sys.stdout.write(info)
                 sys.stdout.flush()
 
@@ -233,7 +244,7 @@ class Progbar:
         out : str
             Formatted number.
         """
-        assert isinstance(n, Number), f'{n} is not a Number.'
-        f = '{0:.3g}'.format(n).replace('+0', '+').replace('-0', '-')
+        assert isinstance(n, Number), f"{n} is not a Number."
+        f = "{0:.3g}".format(n).replace("+0", "+").replace("-0", "-")
         n = str(n)
         return f if len(f) < len(n) else n

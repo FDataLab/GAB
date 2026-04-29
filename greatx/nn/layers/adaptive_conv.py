@@ -34,8 +34,14 @@ class AdaptiveConv(nn.Module):
     --------
     :class:`greatx.nn.models.supervised.AirGNN`
     """
-    def __init__(self, K: int = 3, lambda_amp: float = 0.1,
-                 normalize: bool = True, add_self_loops: bool = True):
+
+    def __init__(
+        self,
+        K: int = 3,
+        lambda_amp: float = 0.1,
+        normalize: bool = True,
+        add_self_loops: bool = True,
+    ):
         super().__init__()
 
         self.K = K
@@ -46,32 +52,39 @@ class AdaptiveConv(nn.Module):
     def reset_parameters(self):
         pass
 
-    def forward(self, x: Tensor, edge_index: Adj,
-                edge_weight: OptTensor = None) -> Tensor:
+    def forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         """"""
 
         if self.add_self_loops:
-            edge_index, edge_weight = make_self_loops(edge_index, edge_weight,
-                                                      num_nodes=x.size(0))
+            edge_index, edge_weight = make_self_loops(
+                edge_index, edge_weight, num_nodes=x.size(0)
+            )
 
         if self.normalize:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=x.size(0),
-                                                    dtype=x.dtype,
-                                                    add_self_loops=False)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=x.size(0),
+                dtype=x.dtype,
+                add_self_loops=False,
+            )
 
         return self.amp_forward(x, edge_index, edge_weight)
 
-    def amp_forward(self, x: Tensor, edge_index: Adj,
-                    edge_weight: OptTensor = None) -> Tensor:
+    def amp_forward(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         lambda_amp = self.lambda_amp
         gamma = 1 / (2 * (1 - lambda_amp))  # or simply gamma = 1
         hh = x
 
         for k in range(self.K):
             # Equation (9)
-            y = x - gamma * 2 * \
-                (1 - lambda_amp) * self.compute_LX(x, edge_index, edge_weight)
+            y = x - gamma * 2 * (1 - lambda_amp) * self.compute_LX(
+                x, edge_index, edge_weight
+            )
             # Equation (11) and (12)
             x = hh + self.proximal_L21(x=y - hh, lambda_=gamma * lambda_amp)
         return x
@@ -85,8 +98,9 @@ class AdaptiveConv(nn.Module):
         score[index] = score[index] / row_norm[index]
         return score.unsqueeze(1) * x
 
-    def compute_LX(self, x: Tensor, edge_index: Adj,
-                   edge_weight: OptTensor = None) -> Tensor:
+    def compute_LX(
+        self, x: Tensor, edge_index: Adj, edge_weight: OptTensor = None
+    ) -> Tensor:
         out = spmm(x, edge_index, edge_weight)
 
         return x - out

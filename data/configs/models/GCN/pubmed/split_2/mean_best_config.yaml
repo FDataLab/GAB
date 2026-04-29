@@ -11,7 +11,6 @@ model_config:
   optimizer: ADAM
   patience: 50
   weight_decay: 0.0005
-performance: 0.8179513184584178
 split:
   idx_test:
   - 88

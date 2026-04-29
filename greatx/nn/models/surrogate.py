@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 from torch.nn import Module
 
-classes = __all__ = ['Surrogate']
+classes = __all__ = ["Surrogate"]
 
 
 class Surrogate(Module):
@@ -18,6 +18,7 @@ class Surrogate(Module):
         the device of a model to use for, by default "cpu"
 
     """
+
     _is_setup = False  # flags to denote the surrogate model is properly set
 
     def __init__(self, device: str = "cpu"):
@@ -25,8 +26,13 @@ class Surrogate(Module):
         self.device = torch.device(device)
 
     def setup_surrogate(
-            self, surrogate: Module, *, tau: float = 1.0, freeze: bool = True,
-            required: Union[Module, Tuple[Module]] = None) -> "Surrogate":
+        self,
+        surrogate: Module,
+        *,
+        tau: float = 1.0,
+        freeze: bool = True,
+        required: Union[Module, Tuple[Module]] = None,
+    ) -> "Surrogate":
         """Method used to initialize the (trained) surrogate model.
 
         Parameters
@@ -64,14 +70,15 @@ class Surrogate(Module):
         if required is not None and not isinstance(surrogate, required):
             raise RuntimeError(
                 f"The surrogate model is required to be `{required}`, "
-                f"but got `{surrogate.__class__.__name__}`.")
+                f"but got `{surrogate.__class__.__name__}`."
+            )
 
         surrogate.eval()
-        if hasattr(surrogate, 'cache_clear'):
+        if hasattr(surrogate, "cache_clear"):
             surrogate.cache_clear()
 
         for layer in surrogate.modules():
-            if hasattr(layer, 'cached'):
+            if hasattr(layer, "cached"):
                 layer.cached = False
 
         self.surrogate = surrogate.to(self.device)
@@ -109,8 +116,7 @@ class Surrogate(Module):
                 grad *= grad_clip / grad_len_sq.sqrt()
         return grad
 
-    def estimate_self_training_labels(
-            self, nodes: Optional[Tensor] = None) -> Tensor:
+    def estimate_self_training_labels(self, nodes: Optional[Tensor] = None) -> Tensor:
         """Estimate the labels of nodes using the trained surrogate model.
 
         Parameters
@@ -124,8 +130,9 @@ class Surrogate(Module):
         Tensor
             the labels of the input nodes.
         """
-        self_training_labels = self.surrogate(self.feat, self.edge_index,
-                                              self.edge_weight)
+        self_training_labels = self.surrogate(
+            self.feat, self.edge_index, self.edge_weight
+        )
         if nodes is not None:
             self_training_labels = self_training_labels[nodes]
         return self_training_labels.argmax(-1)

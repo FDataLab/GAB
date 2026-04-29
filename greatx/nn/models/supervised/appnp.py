@@ -60,11 +60,21 @@ class APPNP(nn.Module):
     >>> model = APPNP(100, 10, hids=[16]*8, acts=['elu'])
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 dropout: float = 0.8, K: int = 10, alpha: float = 0.1,
-                 bn: bool = False, bias: bool = True, cached: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        dropout: float = 0.8,
+        K: int = 10,
+        alpha: float = 0.1,
+        bn: bool = False,
+        bias: bool = True,
+        cached: bool = False,
+    ):
 
         super().__init__()
         assert len(hids) > 0

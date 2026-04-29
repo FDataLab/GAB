@@ -29,7 +29,7 @@ def margin_loss(score: Tensor, target: Tensor) -> Tensor:
     true_score = score[linear_idx, target]
 
     score = score.clone()
-    score[linear_idx, target] = float('-Inf')
+    score[linear_idx, target] = float("-Inf")
     best_non_target_score = score.amax(dim=-1)
 
     margin = best_non_target_score - true_score

@@ -60,12 +60,22 @@ class ElasticGNN(nn.Module):
     :class:`greatx.nn.layers.ElasticGNN`
 
     """
+
     @wrapper
-    def __init__(self, in_channels: int, out_channels: int,
-                 hids: List[int] = [16], acts: List[str] = ['relu'],
-                 K: int = 3, lambda1: float = 3, lambda2: float = 3,
-                 cached: bool = True, dropout: float = 0.8, bias: bool = True,
-                 bn: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        hids: List[int] = [16],
+        acts: List[str] = ["relu"],
+        K: int = 3,
+        lambda1: float = 3,
+        lambda2: float = 3,
+        cached: bool = True,
+        dropout: float = 0.8,
+        bias: bool = True,
+        bn: bool = False,
+    ):
 
         super().__init__()
 
@@ -81,8 +91,9 @@ class ElasticGNN(nn.Module):
         lin.append(nn.Dropout(dropout))
         lin.append(nn.Linear(in_channels, out_channels, bias=bias))
 
-        self.prop = ElasticConv(K=K, lambda1=lambda1, lambda2=lambda2,
-                                L21=True, cached=cached)
+        self.prop = ElasticConv(
+            K=K, lambda1=lambda1, lambda2=lambda2, L21=True, cached=cached
+        )
 
         self.lin = Sequential(*lin)
 
@@ -98,7 +109,7 @@ class ElasticGNN(nn.Module):
     def forward(self, x, edge_index, edge_weight=None):
         """"""
         x = self.lin(x)
-       
+
         # Added this to avoid prop reuse adj used in training
         self.prop._cached = None
         return self.prop(x, edge_index, edge_weight)

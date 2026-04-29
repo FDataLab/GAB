@@ -1,7 +1,7 @@
+from .cca_ssg import CCA_SSG
 from .dgi import DGI
 from .ggd import GGD
 from .grace import GRACE
-from .cca_ssg import CCA_SSG
 
 classes = __all__ = [
     "DGI",

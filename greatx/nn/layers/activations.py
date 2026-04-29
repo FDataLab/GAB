@@ -2,9 +2,20 @@ from typing import Optional
 
 import torch.nn as nn
 
-act_dict = dict(relu="ReLU", relu6="ReLU6", sigmoid="Sigmoid", celu="CELU",
-                elu="ELU", gelu="GELU", leakyrelu="LeakyReLU", prelu="PReLU",
-                selu="SELU", silu="SiLU", softmax="Softmax", tanh="Tanh")
+act_dict = dict(
+    relu="ReLU",
+    relu6="ReLU6",
+    sigmoid="Sigmoid",
+    celu="CELU",
+    elu="ELU",
+    gelu="GELU",
+    leakyrelu="LeakyReLU",
+    prelu="PReLU",
+    selu="SELU",
+    silu="SiLU",
+    softmax="Softmax",
+    tanh="Tanh",
+)
 
 
 def get(act: Optional[str] = None, inplace: bool = False) -> nn.Module:
@@ -58,4 +69,5 @@ def get(act: Optional[str] = None, inplace: bool = False) -> nn.Module:
     else:
         raise ValueError(
             f"Unknown activation {act}. The allowed activation functions"
-            f" are {tuple(act_dict.keys())} or `None`.")
+            f" are {tuple(act_dict.keys())} or `None`."
+        )

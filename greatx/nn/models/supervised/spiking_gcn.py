@@ -67,6 +67,7 @@ class SpikingGCN(nn.Module):
     :class:`greatx.nn.layers.SpikingGCNonv`
 
     """
+
     @wrapper
     def __init__(
         self,
@@ -78,8 +79,8 @@ class SpikingGCN(nn.Module):
         T: int = 20,
         tau: float = 2.0,
         v_threshold: float = 1.0,
-        v_reset: float = 0.,
-        dropout: float = 0.,
+        v_reset: float = 0.0,
+        dropout: float = 0.0,
         bias: bool = True,
         cached: bool = True,
         bn: bool = False,
@@ -95,9 +96,18 @@ class SpikingGCN(nn.Module):
             conv.append(nn.Identity())
 
         conv.append(
-            SpikingGCNonv(in_channels, out_channels, bias=bias, K=K, T=T,
-                          cached=cached, tau=tau, v_threshold=v_threshold,
-                          v_reset=v_reset))
+            SpikingGCNonv(
+                in_channels,
+                out_channels,
+                bias=bias,
+                K=K,
+                T=T,
+                cached=cached,
+                tau=tau,
+                v_threshold=v_threshold,
+                v_reset=v_reset,
+            )
+        )
         self.conv = Sequential(*conv)
 
     def reset_parameters(self):
@@ -106,7 +116,7 @@ class SpikingGCN(nn.Module):
     def cache_clear(self):
         """Clear cached inputs or intermediate results."""
         for layer in self.conv:
-            if hasattr(layer, 'cache_clear'):
+            if hasattr(layer, "cache_clear"):
                 layer.cache_clear()
         return self
 

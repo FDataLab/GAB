@@ -1,37 +1,43 @@
-import numpy as np
-from numpy import linalg as LA
-from scipy.sparse import csr_matrix, diags
-from scipy.sparse.linalg import svds, eigs
-from opt_einsum import contract
-from torch_geometric.transforms import BaseTransform
-import sys
 import os
+import sys
 from copy import copy
-from torch_geometric.data import Data
-from torch_geometric.utils import to_dense_adj,to_edge_index
-from scipy.sparse import csr_matrix
+
+import numpy as np
 import torch
+from numpy import linalg as LA
+from opt_einsum import contract
+from scipy.sparse import csr_matrix, diags
+from scipy.sparse.linalg import eigs, svds
+from torch_geometric.data import Data
+from torch_geometric.transforms import BaseTransform
+from torch_geometric.utils import to_dense_adj, to_edge_index
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from defense_model.improving_graph.GARNET.utils import normal_adj, embedding_normalize, adj2laplacian,hnsw
-
+from defense_model.improving_graph.GARNET.utils import (
+    adj2laplacian,
+    embedding_normalize,
+    hnsw,
+    normal_adj,
+)
 
 NODES_THRESHOLD = 100000
 
+
 class GarnetPurification(BaseTransform):
-    def __init__(self, r=50,
-                k=30,
-                gamma=0.0,
-                use_feature=True,
-                embedding_norm=None,
-                embedding_symmetric=False,
-                full_distortion=False,
-                adj_norm=True,
-                weighted_knn=True):
-        
+    def __init__(
+        self,
+        r=50,
+        k=30,
+        gamma=0.0,
+        use_feature=True,
+        embedding_norm=None,
+        embedding_symmetric=False,
+        full_distortion=False,
+        adj_norm=True,
+        weighted_knn=True,
+    ):
+
         self.r = r
         self.k = k
         self.gamma = gamma
@@ -41,7 +47,6 @@ class GarnetPurification(BaseTransform):
         self.embedding_symmetric = embedding_symmetric
         self.adj_norm = adj_norm
         self.weighted_knn = weighted_knn
-
 
     def __call__(self, data: Data, inplace: bool = True) -> Data:
         if not inplace:
@@ -61,12 +66,12 @@ class GarnetPurification(BaseTransform):
             adj_mtx = normal_adj(adj_mtx)
         U, S, Vt = svds(adj_mtx, self.r)
 
-        spec_embed = np.sqrt(S.reshape(1,-1))*U
-        spec_embed_Vt = np.sqrt(S.reshape(1,-1))*Vt.transpose()
+        spec_embed = np.sqrt(S.reshape(1, -1)) * U
+        spec_embed_Vt = np.sqrt(S.reshape(1, -1)) * Vt.transpose()
         spec_embed = embedding_normalize(spec_embed, self.embedding_norm)
         spec_embed_Vt = embedding_normalize(spec_embed_Vt, self.embedding_norm)
         if self.use_feature:
-            feat_embed = adj_mtx @ (adj_mtx @ features)/2
+            feat_embed = adj_mtx @ (adj_mtx @ features) / 2
             feat_embed = embedding_normalize(feat_embed, self.embedding_norm)
             feat_embed = feat_embed.toarray()
             spec_embed = np.concatenate((spec_embed, feat_embed), axis=1)
@@ -76,30 +81,37 @@ class GarnetPurification(BaseTransform):
         adj_mtx = hnsw(spec_embed, self.k)
         diag_mtx = diags(adj_mtx.diagonal(), 0)
         row, col = adj_mtx.nonzero()
-        lower_diag_idx = np.argwhere(row>col).reshape(-1)
+        lower_diag_idx = np.argwhere(row > col).reshape(-1)
         row = row[lower_diag_idx]
         col = col[lower_diag_idx]
 
         ## use batch version of edge pruning on large graphs
         if batch_version:
-            '''
+            """
             We choose simplified disortion metric for the batch version,
             as computing the full distortion metric is expensive on large graphs.
-            '''
+            """
             idx = []
             embed_sim = []
             batch_size = 20000
             num_edges = row.shape[0]
-            for i in range(num_edges//batch_size):
-                bstart = i*batch_size
-                if i < num_edges//batch_size - 1:
-                    bend = (i+1)*batch_size
+            for i in range(num_edges // batch_size):
+                bstart = i * batch_size
+                if i < num_edges // batch_size - 1:
+                    bend = (i + 1) * batch_size
                 else:
                     bend = num_edges
                 batch_row_embed = spec_embed[row[bstart:bend]]
                 batch_col_embed = spec_embed_Vt[col[bstart:bend]]
-                batch_embed_sim = contract("ik, ik -> i" , batch_row_embed, batch_col_embed)
-                batch_idx = np.argwhere(batch_embed_sim>self.gamma).reshape(-1,)+bstart
+                batch_embed_sim = contract(
+                    "ik, ik -> i", batch_row_embed, batch_col_embed
+                )
+                batch_idx = (
+                    np.argwhere(batch_embed_sim > self.gamma).reshape(
+                        -1,
+                    )
+                    + bstart
+                )
                 idx = np.concatenate((idx, batch_idx))
                 embed_sim = np.concatenate((embed_sim, batch_embed_sim))
             idx = idx.astype(int)
@@ -112,27 +124,33 @@ class GarnetPurification(BaseTransform):
             else:
                 col_embed = spec_embed_Vt[col]
 
-            '''
+            """
             We replace Euclidean distance w/ dot product to measure embedding distance,
             which has two benefits:
             (1) dot product is more efficient to compute by leveraging eisum (i.e., contract).
             (2) the results of dot product could be used as edge weights in the refined graph.
-            '''
-            embed_sim = contract("ik, ik -> i" , row_embed, col_embed)
+            """
+            embed_sim = contract("ik, ik -> i", row_embed, col_embed)
 
             if self.full_distortion:
-                ori_dist = LA.norm((row_embed-col_embed), axis=1)
-                S_b, U_b = eigs(adj2laplacian(adj_mtx), self.r, which='SM')
+                ori_dist = LA.norm((row_embed - col_embed), axis=1)
+                S_b, U_b = eigs(adj2laplacian(adj_mtx), self.r, which="SM")
                 S_b, U_b = S_b[1:].real, U_b[:, 1:].real
-                base_spec_embed = U_b/np.sqrt(S_b.reshape(1,-1))
-                base_spec_embed = embedding_normalize(base_spec_embed, self.embedding_norm)
+                base_spec_embed = U_b / np.sqrt(S_b.reshape(1, -1))
+                base_spec_embed = embedding_normalize(
+                    base_spec_embed, self.embedding_norm
+                )
                 base_row_embed = base_spec_embed[row]
                 base_col_embed = base_spec_embed[col]
-                base_dist = LA.norm((base_row_embed-base_col_embed), axis=1)
-                spec_dist = base_dist/ori_dist
-                idx = np.argwhere(spec_dist>self.gamma).reshape(-1,)
+                base_dist = LA.norm((base_row_embed - base_col_embed), axis=1)
+                spec_dist = base_dist / ori_dist
+                idx = np.argwhere(spec_dist > self.gamma).reshape(
+                    -1,
+                )
             else:
-                idx = np.argwhere(embed_sim>self.gamma).reshape(-1,)
+                idx = np.argwhere(embed_sim > self.gamma).reshape(
+                    -1,
+                )
 
         new_row = row[idx]
         new_col = col[idx]
@@ -143,7 +161,7 @@ class GarnetPurification(BaseTransform):
         adj_mtx = csr_matrix((val, (new_row, new_col)), shape=(num_nodes, num_nodes))
         adj_mtx = adj_mtx + adj_mtx.transpose() + diag_mtx
 
-        adj_mtx =adj_mtx.tocoo()
+        adj_mtx = adj_mtx.tocoo()
         rows = adj_mtx.row  # Source nodes
         cols = adj_mtx.col  # Destination nodes
 
@@ -153,17 +171,17 @@ class GarnetPurification(BaseTransform):
         data.edge_index = edge_index
         return data
 
-        
-
     def __repr__(self) -> str:
-        desc = f"r={self.r}, " +\
-            f"k={self.k}" +\
-            f"gamma={self.gamma}" +\
-            f"use_feature={self.use_feature}" +\
-            f"embedding_norm={self.embedding_norm}" +\
-            f"full_distortion={self.full_distortion}" +\
-            f"embedding_symmetric={self.embedding_symmetric}" +\
-            f"adj_norm={self.adj_norm}" +\
-            f"weighted_knn={self.weighted_knn}"
-            
-        return f'{self.__class__.__name__}({desc})'
+        desc = (
+            f"r={self.r}, "
+            + f"k={self.k}"
+            + f"gamma={self.gamma}"
+            + f"use_feature={self.use_feature}"
+            + f"embedding_norm={self.embedding_norm}"
+            + f"full_distortion={self.full_distortion}"
+            + f"embedding_symmetric={self.embedding_symmetric}"
+            + f"adj_norm={self.adj_norm}"
+            + f"weighted_knn={self.weighted_knn}"
+        )
+
+        return f"{self.__class__.__name__}({desc})"

@@ -1,19 +1,16 @@
-
-import sys
 import os
+import sys
 from typing import Final
 
-from torch_geometric.nn.conv import (
-    # GINConv,
-    MessagePassing,
-
-)
+from torch_geometric.nn.conv import MessagePassing  # GINConv,
 from torch_geometric.nn.models import MLP
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.nn.models.jumping_knowledge import JumpingKnowledge
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from defense_model.custom.conv.GINConv import GINConv
+
+
 class GIN(BasicGNN):
     r"""The Graph Neural Network from the `"How Powerful are Graph Neural
     Networks?" <https://arxiv.org/abs/1810.00826>`_ paper, using the
@@ -47,12 +44,14 @@ class GIN(BasicGNN):
         **kwargs (optional): Additional arguments of
             :class:`torch_geometric.nn.conv.GINConv`.
     """
+
     supports_edge_weight: Final[bool] = True
     supports_edge_attr: Final[bool] = False
     supports_norm_batch: Final[bool]
 
-    def init_conv(self, in_channels: int, out_channels: int,
-                  **kwargs) -> MessagePassing:
+    def init_conv(
+        self, in_channels: int, out_channels: int, **kwargs
+    ) -> MessagePassing:
         mlp = MLP(
             [in_channels, out_channels, out_channels],
             act=self.act,

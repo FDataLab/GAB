@@ -44,6 +44,7 @@ class BunchDict(OrderedDict):
     >>> b.a
     tensor([1, 2, 3])
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -59,7 +60,7 @@ class BunchDict(OrderedDict):
         except KeyError:
             raise AttributeError(key)
 
-    def to_tensor(self, device: str = 'cpu', dtype=None) -> "BunchDict":
+    def to_tensor(self, device: str = "cpu", dtype=None) -> "BunchDict":
         """Convert objects in BunchDict to :class:`torch.Tensor`
 
         Parameters
@@ -74,6 +75,7 @@ class BunchDict(OrderedDict):
         the converted BunchDict
         """
         import torch
+
         device = torch.device(device)
         for k, v in self.items():
             try:
@@ -94,7 +96,7 @@ class BunchDict(OrderedDict):
 def prettify(item):
     key, val = item
     if val is None:
-        return key, 'None'
+        return key, "None"
     if hasattr(val, "shape"):
         if len(val.shape) == 0 and hasattr(val, "item"):
             val = f"{val.__class__.__name__}, {val.item()}"

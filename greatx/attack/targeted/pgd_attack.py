@@ -76,8 +76,7 @@ class PGDAttack(TargetedAttacker, PGD, Surrogate):
         tau: float = 1.0,
         freeze: bool = True,
     ) -> "PGDAttack":
-        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau,
-                                  freeze=freeze)
+        Surrogate.setup_surrogate(self, surrogate=surrogate, tau=tau, freeze=freeze)
         self.adj = self.get_dense_adj()
         return self
 
@@ -152,17 +151,21 @@ class PGDAttack(TargetedAttacker, PGD, Surrogate):
             the attacker itself
         """
         if not direct_attack:
-            raise RuntimeError(
-                "PGDAttack is not applicable to indirect attack.")
+            raise RuntimeError("PGDAttack is not applicable to indirect attack.")
 
-        super().attack(target, target_label, num_budgets=num_budgets,
-                       direct_attack=direct_attack,
-                       structure_attack=structure_attack,
-                       feature_attack=feature_attack)
+        super().attack(
+            target,
+            target_label,
+            num_budgets=num_budgets,
+            direct_attack=direct_attack,
+            structure_attack=structure_attack,
+            feature_attack=feature_attack,
+        )
 
         victim_label = self.target_label.view(-1)
-        victim_node = torch.as_tensor(self.target, device=self.device,
-                                      dtype=torch.long).view(-1)
+        victim_node = torch.as_tensor(
+            self.target, device=self.device, dtype=torch.long
+        ).view(-1)
         return PGD.attack(
             self,
             self.num_budgets,

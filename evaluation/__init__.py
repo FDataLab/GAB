@@ -1,11 +1,9 @@
-from .Grid import Grid
-from .ModelSupervisor import ModelSupervisor
-from .ModelGrid import ModelGrid
-from .ModelSelector import ModelSelector
-from .PurificationGrid import PurificationGrid
-from .PurificationSelector import PurificationSelector
-from .IModelSupervisor import IModelSupervisor
 from .AdversarialAssessment import AdversarialAssessment
+from .Grid import Grid, ModelGrid, PurificationGrid
+from .IModelSupervisor import IModelSupervisor
+from .ModelSelector import ModelSelector
+from .ModelSupervisor import ModelSupervisor
+from .PurificationSelector import PurificationSelector
 
 classes = __all__ = [
     "AdversarialAssessment",
@@ -16,5 +14,5 @@ classes = __all__ = [
     "PurificationGrid",
     "PurificationSelector",
     "IModelSupervisor",
-    "AdversarialAssessment"
+    "AdversarialAssessment",
 ]

@@ -1,16 +1,16 @@
 import torch
 from torch.autograd.functional import vjp
-from .geometric_integrators import SymplecticEuler, Leapfrog
-from torchdiffeq._impl.scipy_wrapper import ScipyWrapperODESolver
 from torchdiffeq._impl.misc import _check_inputs, _flat_to_shape
+from torchdiffeq._impl.scipy_wrapper import ScipyWrapperODESolver
 
-SOLVERS = {
-    'symplectic_euler': SymplecticEuler,
-    'leapfrog': Leapfrog
-}
+from .geometric_integrators import Leapfrog, SymplecticEuler
+
+SOLVERS = {"symplectic_euler": SymplecticEuler, "leapfrog": Leapfrog}
 
 
-def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, event_fn=None):
+def odeint(
+    func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, event_fn=None
+):
     """Integrate a system of ordinary differential equations.
 
     Solves the initial value problem for a non-stiff system of first order ODEs:
@@ -51,7 +51,9 @@ def odeint(func, y0, t, *, rtol=1e-7, atol=1e-9, method=None, options=None, even
         ValueError: if an invalid `method` is provided.
     """
 
-    shapes, func, y0, t, rtol, atol, method, options, event_fn, t_is_reversed = _check_inputs(func, y0, t, rtol, atol, method, options, event_fn, SOLVERS)
+    shapes, func, y0, t, rtol, atol, method, options, event_fn, t_is_reversed = (
+        _check_inputs(func, y0, t, rtol, atol, method, options, event_fn, SOLVERS)
+    )
 
     solver = SOLVERS[method](func=func, y0=y0, rtol=rtol, atol=atol, **options)
 

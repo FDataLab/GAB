@@ -37,7 +37,7 @@ def mark(
                           👆(0)
     Margin: -0.400
     """
-    assert (isinstance(logit, (np.ndarray, torch.Tensor)) and logit.ndim == 1)
+    assert isinstance(logit, (np.ndarray, torch.Tensor)) and logit.ndim == 1
 
     y_pred = logit.argmax()
     num_classes = len(logit)
@@ -45,14 +45,14 @@ def mark(
     if y_true is not None:
         assert 0 <= y_true < num_classes
         string += f"Ground Truth (y={y_true}): "
-        string += 7 * ' ' * y_true + f' 👇({y_true}) '
-        string += 7 * ' ' * (num_classes - y_true)
+        string += 7 * " " * y_true + f" 👇({y_true}) "
+        string += 7 * " " * (num_classes - y_true)
         string += "\n"
     string += f"Prediction (pred={y_pred}): "
-    string += ', '.join([f"{x:.3f}" for x in logit])
-    string += '\n' + ' ' * 20
-    string += 7 * ' ' * y_pred + f' 👆({y_pred}) '
-    string += 7 * ' ' * (num_classes - y_pred)
+    string += ", ".join([f"{x:.3f}" for x in logit])
+    string += "\n" + " " * 20
+    string += 7 * " " * y_pred + f" 👆({y_pred}) "
+    string += 7 * " " * (num_classes - y_pred)
     if y_true is not None:
         string += f"\nMargin: {logit[y_true]-logit[y_pred]:.3f}"
 

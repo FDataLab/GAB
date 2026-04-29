@@ -62,13 +62,14 @@ class GGD(nn.Module):
     * Author's code: https://github.com/zyzisastudyreallyhardguy/Graph-Group-Discrimination # noqa
 
     """
+
     @wrapper
     def __init__(
         self,
         in_channels: int,
         hids: List[int] = [512],
-        acts: List[str] = ['prelu'],
-        dropout: float = 0.,
+        acts: List[str] = ["prelu"],
+        dropout: float = 0.0,
         bias: bool = True,
         bn: bool = False,
         drop_feat: float = 0.2,
@@ -78,8 +79,7 @@ class GGD(nn.Module):
 
         if mask_feature is None:
             # TODO: support them
-            raise ImportError(
-                "Please install the latest version of `torch_geometric`.")
+            raise ImportError("Please install the latest version of `torch_geometric`.")
 
         encoder = []
         for hid, act in zip(hids, acts):
@@ -113,10 +113,13 @@ class GGD(nn.Module):
         z = self.encoder(x, edge_index, edge_weight)
 
         if not self.training:
-            edge_index, edge_weight = make_gcn_norm(edge_index, edge_weight,
-                                                    num_nodes=x.size(0),
-                                                    dtype=x.dtype,
-                                                    add_self_loops=True)
+            edge_index, edge_weight = make_gcn_norm(
+                edge_index,
+                edge_weight,
+                num_nodes=x.size(0),
+                dtype=x.dtype,
+                add_self_loops=True,
+            )
             h = z
             for _ in range(k):
                 h = spmm(h, edge_index, edge_weight)
@@ -141,6 +144,7 @@ class GGD(nn.Module):
         return pos, neg
 
     def loss(self, postive: Tensor, negative: Tensor) -> Tensor:
-        loss = bce(postive, postive.new_ones(postive.size(0))) + \
-            bce(negative, negative.new_zeros(negative.size(0)))
+        loss = bce(postive, postive.new_ones(postive.size(0))) + bce(
+            negative, negative.new_zeros(negative.size(0))
+        )
         return loss

@@ -14,7 +14,6 @@ model_config:
   sample: 4
   temp: 0.1
   weight_decay: 0.0001
-performance: 0.26337448559670784
 split:
   idx_test:
   - 2
