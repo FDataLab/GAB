@@ -1,6 +1,10 @@
 model: 'SGC'
 aggr: 
   - "sum"
+initializer:
+  - "xavier_normal"
+  - "kaiming_normal"
+  - "orthogonal"
 num_layers:
   - 2
   - 3
