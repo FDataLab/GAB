@@ -15,6 +15,7 @@ from evaluation.ModelSupervisor import ModelSupervisor
 from static import *
 from utility import ConfigHandler
 from utility.util import set_random
+from tqdm import tqdm
 
 
 def memory_stats():
@@ -86,7 +87,7 @@ class ModelSelector:
                 len(self.all_configs)
             )
         )
-        for index, config in enumerate(self.all_configs):
+        for index, config in tqdm(enumerate(self.all_configs), total=len(self.all_configs)):
             aggre_type = config.get(AGGREGATION)
 
             config_perf = self._run_model_on_config(config, seed)

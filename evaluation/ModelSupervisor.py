@@ -75,7 +75,7 @@ class ModelSupervisor:
         self.weight_decay = float(model_args.get(WEIGHT_DECAY, 0))
         self.batch_size = model_args.get(BATCH_SIZE)
         self.model_name = model_args.get(MODEL)
-        self.model = load_model(num_features, num_classes, degree_dist, **model_args)
+        self.model = load_model(int(num_features), int(num_classes), degree_dist, **model_args)
         opti_state = model_args.get(OPTIMIZER_STATE)
 
         if opti_state is not None:
@@ -117,7 +117,7 @@ class ModelSupervisor:
         self.edge_index_torch = data.edge_index
         self.edge_attr = data.edge_attr
         self.features_torch = data.x
-        self.labels_torch = data.y
+        self.labels_torch = data.y.long()
 
         self.to_device(self.device)
         self.output = None
